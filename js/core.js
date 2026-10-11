@@ -1,6 +1,6 @@
 'use strict';
 /* =========================================================
-   Kerf — countertop shop manager
+   Midwest Surfaces — shop manager (Mokena, IL)
    Core helpers, constants, defaults
    ========================================================= */
 const $ = (s, el = document) => el.querySelector(s);
@@ -120,6 +120,7 @@ const stageIdx = (id) => STAGES.findIndex((s) => s.id === id);
 const stageColor = (id) => `var(--s-${id})`;
 const stagePill = (id) => `<span class="pill" style="--c:${stageColor(id)}">${esc(stageName(id))}</span>`;
 
+const SHOP = { name: 'Midwest Surfaces', city: 'Mokena, IL', app: 'Shop Manager' };
 const BASE_ACT_TYPES = [
   { id: 'template', name: 'Template', color: 'var(--t-template)', base: true },
   { id: 'fabrication', name: 'Fabrication', color: 'var(--t-fab)', base: true },
@@ -156,7 +157,7 @@ const MEMBER_COLORS = ['#B33B0B', '#2D5C9C', '#0F7C80', '#7650AD', '#2D7A4C', '#
 const AREA_PRESETS = ['Kitchen', 'Island', 'Vanity', 'Bar top', 'Laundry', 'Fireplace', 'Outdoor kitchen', 'Shower curb & niche'];
 
 const DEFAULT_SETTINGS = {
-  shopName: '', shopPhone: '', shopEmail: '', shopAddress: '', logo: '', activityTypes: [],
+  shopName: 'Midwest Surfaces', shopPhone: '', shopEmail: '', shopAddress: 'Mokena, IL', logo: '', activityTypes: [],
   taxRate: 0, depositPct: 50, minCharge: 1200, tearOutPerSqft: 8, quoteValidDays: 30,
   slabL: 126, slabW: 63,
   capInstallSqft: 160, capTemplates: 4,

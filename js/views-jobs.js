@@ -22,13 +22,13 @@ function gettingStartedHTML(full) {
       ${step(triedSample, 1, 'Explore with the sample shop', 'Loads a dozen realistic jobs, a crew and a full week on the calendar so you can click around before entering real work. Remove it any time in Settings.', S.canWrite && !hasSample() ? `<button class="btn primary glow" data-act="load-sample">${icon('board')}Load sample shop</button><span class="tag demo">Recommended</span>` : (hasSample() ? '<span class="tag ok">Sample shop loaded</span>' : ''), triedSample ? '' : 'gs-hot')}
       ${step(hasLogo, 2, 'Add your logo', 'It shows in the menu and on every customer quote.', hasLogo ? `<img class="gs-logo" src="${safeImg(c.logo)}" alt="Your logo">` : `<label class="btn">${icon('download', 'style="transform:rotate(180deg)"')}Upload logo<input type="file" accept="image/*" class="sr" data-upload="logo"></label>`)}
       ${step(pricesSet, 3, 'Check your prices', 'Materials per square foot, edges, cutouts and sinks. Starter prices are filled in.', `<button class="btn" data-act="go" data-view="settings">${icon('tag')}Open prices</button>`)}
-      ${step(crewIn, 4, 'Invite your crew', code ? `Text them your shop code. They tap <b>Join a shop</b> on the website and you approve them. The code always lives at the top of the <b>Team</b> page.` : 'Add your team on the Team page.', code ? `<span class="shopcode sm mono" style="user-select:all">${esc(code)}</span><button class="btn" data-act="copy-code">${icon('copy')}Copy invite</button><button class="btn ghost" data-act="go" data-view="team">Go to Team</button>` : `<button class="btn" data-act="go" data-view="team">Go to Team</button>`)}
+      ${step(crewIn, 4, 'Invite your crew', code ? `Text them your shop code. They tap <b>New to the team?</b> on the website and you approve them. The code always lives at the top of the <b>Team</b> page.` : 'Add your team on the Team page.', code ? `<span class="shopcode sm mono" style="user-select:all">${esc(code)}</span><button class="btn" data-act="copy-code">${icon('copy')}Copy invite</button><button class="btn ghost" data-act="go" data-view="team">Go to Team</button>` : `<button class="btn" data-act="go" data-view="team">Go to Team</button>`)}
     </ol></section>`;
 }
 function welcomeHTML() {
   return `<div class="welcome">
     <div class="card"><div class="card-h"><h2>Set up your shop</h2></div><div class="card-b">
-      <p class="muted" style="margin:0">Kerf runs quoting, scheduling and the job board for your whole crew. Three steps and you’re live:</p>
+      <p class="muted" style="margin:0">This runs quoting, scheduling and the job board for the whole Midwest Surfaces crew. Three steps and you’re live:</p>
       <ol><li><b>Check your prices.</b> Materials per sq ft, edge profiles, cutouts and sinks.</li><li><b>Add your team.</b> Sales, templaters, fabricators and install crews.</li><li><b>Write your first quote.</b> Measure in inches, Kerf does the square feet, slabs and total.</li></ol>
       <div class="btn-row">${S.canWrite ? `<button class="btn primary" data-act="new-job">${icon('plus')}Write first quote</button>` : ''}<button class="btn" data-act="go" data-view="settings">Check prices</button><button class="btn" data-act="go" data-view="team">Add team</button></div>
     </div></div>
@@ -65,7 +65,7 @@ function actRowHTML(a, opts = {}) {
 
 VIEWS.dashboard = () => {
   const jobs = allJobs();
-  if (!jobs.length) return { title: `Welcome${shopName() ? ' to ' + esc(shopName()) : ' to Kerf'}`, body: isAdmin() ? gettingStartedHTML(true) : welcomeHTML() };
+  if (!jobs.length) return { title: `Welcome${shopName() ? ' to ' + esc(shopName()) : ' to ' + SHOP.name}`, body: isAdmin() ? gettingStartedHTML(true) : welcomeHTML() };
   const t = today(), ws = weekStart(t), we = addDays(ws, 6);
   const mStart = parseD(t.slice(0, 8) + '01').getTime();
   const live = jobs.filter((j) => j.stage !== 'lost');
@@ -227,7 +227,7 @@ VIEWS.job = ({ id }) => {
   const quoteCard = `<div class="card"><div class="card-h"><h2>${C ? 'Stone & pieces' : 'Quote'}</h2>${q && !C ? `<button class="btn sm" data-act="quote-doc" data-id="${esc(j.id)}">${icon('doc')}Customer copy</button>` : ''}${W ? `<button class="btn sm ${q ? '' : 'primary'}" data-act="go" data-view="quote" data-id="${esc(j.id)}">${icon('ruler')}${q ? 'Edit quote' : 'Build quote'}</button>` : ''}</div>
     ${q ? `<div class="rows">${q.areas.map((a, i) => `<div class="row"><span class="swatch" style="background:${esc(a.mat ? a.mat.color : '#ccc')}"></span><span class="grow"><span class="t1">${esc(a.name)}</span><span class="t2">${esc(a.mat ? a.mat.name : '')}${a.thick ? ' · ' + esc(a.thick) : ''} · ${esc(a.edge ? a.edge.name : '')} edge${(a.addons || []).filter((x) => x.count).length ? ' · ' + esc((a.addons || []).filter((x) => x.count).map((x) => (x.count > 1 ? x.count + '× ' : '') + x.name).join(', ')) : ''}</span></span><span class="right num">${C ? '' : `<b>${money(calc.areas[i].total)}</b><br>`}<span class="faint">${sqft1(calc.areas[i].sqft)} ft²</span></span></div>`).join('')}</div>
       <div class="card-b" style="border-top:1px solid var(--line)"><div class="qstats"><div><b>${sqft1(calc.sqft)}</b><span>SQ FT</span></div><div><b>${calc.nest.slabs}</b><span>SLAB${calc.nest.slabs === 1 ? '' : 'S'} EST.</span></div><div><b>${calc.nest.seams}</b><span>SEAM${calc.nest.seams === 1 ? '' : 'S'}</span></div></div></div>`
-      : `<div class="empty"><b>No quote yet.</b><span>${C ? 'The office hasn’t priced this job yet.' : 'Measure in inches, pick the stone, and Kerf prices it in real time.'}</span></div>`}
+      : `<div class="empty"><b>No quote yet.</b><span>${C ? 'The office hasn’t priced this job yet.' : 'Measure in inches, pick the stone, and it prices itself as you type.'}</span></div>`}
   </div>`;
 
   const schedCard = `<div class="card"><div class="card-h"><h2>Schedule</h2></div>

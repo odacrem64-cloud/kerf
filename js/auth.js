@@ -12,7 +12,8 @@ const signedIn = () => !!S.auth.user;
 
 function authHTML() {
   const a = S.auth;
-  const head = `<div class="auth-brand">${BRAND}<span>KERF</span></div>`;
+  const head = `<div class="auth-brand">${BRAND}<span>${esc(SHOP.name)}<small>${esc(SHOP.city)}</small></span></div>`;
+  const setUp = !!(S.auth.cfg && S.auth.cfg.hasShop);
   const err = a.err ? `<div class="auth-err" role="alert">${esc(a.err)}</div>` : '';
   const btn = (label) => `<button class="btn primary auth-go" type="submit" data-label="${esc(label)}" ${a.busy ? 'disabled' : ''}>${a.busy ? 'Working…' : esc(label)}</button>`;
   const pw = (id, label, auto) => `<label class="field"><span>${label}</span><div class="pw"><input class="input" id="${id}" type="password" autocomplete="${auto}" minlength="${auto === 'new-password' ? 8 : 1}"><button type="button" class="btn sm ghost" data-act="pw-toggle" data-for="${id}">Show</button></div></label>`;
@@ -21,16 +22,18 @@ function authHTML() {
         <label class="field"><span>Your name</span><input class="input" id="au-name" autocomplete="name"></label>
         <label class="field"><span>Email</span><input class="input" id="au-email" type="email" autocomplete="username" inputmode="email"></label>
         ${pw('au-pass', 'Password (8+ characters)', 'new-password')}
-        <p class="faint" style="font-size:12px;margin:0">Already use Kerf with another shop? Use the same email and password.</p>`;
+        `;
   let body = '';
   switch (a.screen) {
     case 'start':
-      body = `<h1>Welcome to Kerf</h1><p class="muted">Quotes, jobs and the schedule for countertop shops.</p>
-        <div class="choice">
-          <button class="choice-btn" data-act="auth-screen" data-v="create">${icon('plus')}<span><b>Create a shop</b><small>For owners. Name your shop and invite your crew.</small></span></button>
-          <button class="choice-btn" data-act="auth-screen" data-v="join">${icon('users')}<span><b>Join a shop</b><small>For workers. Enter the code your boss gives you.</small></span></button>
-        </div>
-        <p class="auth-foot muted">Already have a login? <button class="linkbtn" data-act="auth-screen" data-v="login">Sign in</button></p>`;
+      body = setUp
+        ? `<h1>Welcome</h1><p class="muted">Quotes, jobs, the schedule and slab inventory for the Midwest Surfaces team.</p>
+          <div class="choice">
+            <button class="choice-btn" data-act="auth-screen" data-v="login">${icon('next')}<span><b>Sign in</b><small>Use the email and password you set up.</small></span></button>
+            <button class="choice-btn" data-act="auth-screen" data-v="join">${icon('users')}<span><b>New to the team?</b><small>Join with the shop code from the office.</small></span></button>
+          </div>`
+        : `<h1>Set up the shop</h1><p class="muted">First time here. Create the owner login for Midwest Surfaces, then invite the team.</p>
+          <div class="choice"><button class="choice-btn" data-act="auth-screen" data-v="create">${icon('plus')}<span><b>Create the owner login</b><small>Only needed once.</small></span></button></div>`;
       break;
     case 'login':
       body = `${back()}<h1>Sign in</h1>${err}
@@ -42,15 +45,15 @@ function authHTML() {
         <p class="faint auth-foot">Forgot your password? Ask your shop’s owner or office to reset it from the Team page.</p>`;
       break;
     case 'create':
-      body = `${back()}<h1>Create your shop</h1><p class="muted">You’ll be the owner. Add your prices and crew after this.</p>${err}
+      body = `${back()}<h1>Owner login</h1><p class="muted">This sets up Midwest Surfaces. You’ll add prices and the crew after this.</p>${err}
         <form class="auth-form" data-form="create" novalidate>
-          <label class="field"><span>Shop name</span><input class="input" id="au-shop" placeholder="Alvarez Stone & Granite" autocomplete="organization" autofocus></label>
+          <input type="hidden" id="au-shop" value="${esc(SHOP.name)}">
           ${who}
-          ${btn('Create shop')}
+          ${btn('Create owner login')}
         </form>`;
       break;
     case 'join':
-      body = `${back()}<h1>Join a shop</h1><p class="muted">Ask your boss for the shop code. They’ll approve you before you can see jobs.</p>${err}
+      body = `${back()}<h1>Join the team</h1><p class="muted">Ask the office for the shop code. They’ll approve you before you can see jobs.</p>${err}
         <form class="auth-form" data-form="join" novalidate>
           <label class="field"><span>Shop code</span><input class="input mono code-input" id="au-code" placeholder="ABC123" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="12" autofocus></label>
           ${who}
@@ -58,17 +61,17 @@ function authHTML() {
         </form>`;
       break;
     case 'noshop':
-      body = `<h1>You’re not in a shop yet</h1><p class="muted">Signed in as ${esc((S.auth.user && S.auth.user.email) || '')}.</p>
+      body = `<h1>You’re not on the team yet</h1><p class="muted">Signed in as ${esc((S.auth.user && S.auth.user.email) || '')}.</p>
         <div class="choice">
-          <button class="choice-btn" data-act="auth-screen" data-v="create">${icon('plus')}<span><b>Create a shop</b><small>Name your shop and invite your crew.</small></span></button>
-          <button class="choice-btn" data-act="auth-screen" data-v="join">${icon('users')}<span><b>Join a shop</b><small>Enter the code your boss gives you.</small></span></button>
+          ${setUp ? '' : `<button class="choice-btn" data-act="auth-screen" data-v="create">${icon('plus')}<span><b>Set up Midwest Surfaces</b><small>Become the owner login.</small></span></button>`}
+          <button class="choice-btn" data-act="auth-screen" data-v="join">${icon('users')}<span><b>Join the team</b><small>Enter the shop code from the office.</small></span></button>
         </div>
         <p class="auth-foot"><button class="linkbtn" data-act="sign-out">Sign out</button></p>`;
       break;
     case 'pickshop':
       body = `<h1>Choose a shop</h1>
         <div class="choice">${S.myShops.map((m) => `<button class="choice-btn" data-act="pick-shop" data-id="${esc(m.shop_id)}">${icon('home')}<span><b>${esc(m.name || 'Shop')}</b><small>${m.status === 'pending' ? 'Waiting for approval' : !m.active ? 'Login turned off' : esc(ACCESS_LABEL[m.access] || '')}</small></span></button>`).join('')}</div>
-        <p class="auth-foot"><button class="linkbtn" data-act="auth-screen" data-v="noshop">Create or join another shop</button> · <button class="linkbtn" data-act="sign-out">Sign out</button></p>`;
+        <p class="auth-foot"><button class="linkbtn" data-act="sign-out">Sign out</button></p>`;
       break;
     case 'pending': {
       const m = S.myShops.find((x) => x.shop_id === S.pendingShop) || {};
@@ -78,13 +81,13 @@ function authHTML() {
       break;
     }
     case 'schema':
-      body = `<h1>One more step</h1><p class="muted">Kerf is connected to Supabase, but the database tables aren’t set up yet.</p>${err}
+      body = `<h1>One more step</h1><p class="muted">The site is connected to Supabase, but the database tables aren’t set up yet.</p>${err}
         <ol class="auth-steps"><li>Click <b>Copy setup script</b> below.</li><li>In Supabase, open your project, then <b>SQL Editor</b> → <b>New query</b>.</li><li>Paste, then click <b>Run</b>. You should see “Success.”</li><li>Come back here and click <b>Check again</b>.</li></ol>
         <div class="btn-row"><button class="btn dark" data-act="copy-schema">${icon('copy')}Copy setup script</button><button class="btn primary" data-act="reload">Check again</button></div>`;
       break;
     case 'key': {
       const has = S.auth.cfg && S.auth.cfg.hasSecret;
-      body = `<h1>${has ? 'Check the secret key' : 'Add the secret key'}</h1><p class="muted">${has ? 'Supabase isn’t accepting the secret key saved in Vercel.' : 'Kerf needs your Supabase secret key saved in Vercel.'}</p>
+      body = `<h1>${has ? 'Check the secret key' : 'Add the secret key'}</h1><p class="muted">${has ? 'Supabase isn’t accepting the secret key saved in Vercel.' : 'The site needs your Supabase secret key saved in Vercel.'}</p>
         <ol class="auth-steps"><li>In Supabase: <b>Project Settings</b> → <b>API Keys</b>. Copy the <b>secret</b> key.</li><li>In Vercel: your project → <b>Settings</b> → <b>Environment Variables</b>. Set <b>SUPABASE_SECRET_KEY</b> to that value.</li><li>Open <b>Deployments</b>, click ⋯ on the latest one, choose <b>Redeploy</b>, then reload this page.</li></ol>
         <button class="btn primary" data-act="reload">Check again</button>`;
       break;
@@ -97,7 +100,7 @@ function authHTML() {
       body = `<h1>Opening your shop…</h1><div class="skeleton" style="padding:10px 0"><i style="height:14px"></i><i style="height:14px;width:70%"></i></div>`;
       break;
     default:
-      body = `<h1>Something went wrong</h1><p class="muted">${esc(a.err || 'Kerf couldn’t load.')}</p><button class="btn primary" data-act="reload">Try again</button>`;
+      body = `<h1>Something went wrong</h1><p class="muted">${esc(a.err || 'The app couldn’t load.')}</p><button class="btn primary" data-act="reload">Try again</button>`;
   }
   return `<div class="auth-wrap"><div class="auth-card">${head}${body}</div></div>`;
 }
@@ -188,8 +191,8 @@ async function submitAuth(form) {
   }
   if (kind === 'create' || kind === 'join') {
     const body = { action: kind };
-    if (kind === 'create') { body.shopName = v('au-shop'); if (!body.shopName) { showAuthErr('Name your shop.'); return; } }
-    else { body.code = v('au-code'); if (body.code.replace(/[^a-z0-9]/gi, '').length < 4) { showAuthErr('Enter the shop code your boss gave you.'); return; } }
+    if (kind === 'create') body.shopName = SHOP.name;
+    else { body.code = v('au-code'); if (body.code.replace(/[^a-z0-9]/gi, '').length < 4) { showAuthErr('Enter the shop code from the office.'); return; } }
     if (!signedIn()) {
       body.name = v('au-name'); body.email = v('au-email').toLowerCase(); body.password = raw('au-pass');
       if (!body.name || !body.email || body.password.length < 8) { showAuthErr('Fill in your name, email, and a password with at least 8 characters.'); return; }
@@ -202,8 +205,9 @@ async function submitAuth(form) {
       if (error) { showAuth('login', 'You’re all set. Sign in to continue.'); return; }
       S.auth.user = data.user;
     }
+    if (S.auth.cfg) S.auth.cfg.hasShop = true;
     await routeAfterSignIn(j.shopId);
-    if (kind === 'create' && S.auth.screen === null) toast(`${j.shopName} is ready. Start with your prices, then invite your crew from Team.`, { ms: 6000 });
+    if (kind === 'create' && S.auth.screen === null) toast('Midwest Surfaces is set up. Start with your prices, then invite the crew from Team.', { ms: 6000 });
   }
 }
 function setBusy(b) { S.auth.busy = b; const g = $('.auth-go'); if (g) { g.disabled = b; g.textContent = b ? 'Working…' : g.dataset.label || g.textContent; } }
@@ -247,12 +251,12 @@ function loginModal(teamId) {
 }
 function credentialsModal(name, email, password, title = 'Login ready') {
   const site = location.origin;
-  const text = `Kerf login for ${name}\nWebsite: ${site}\nEmail: ${email}\nPassword: ${password}`;
+  const text = `Midwest Surfaces login for ${name}\nWebsite: ${site}\nEmail: ${email}\nPassword: ${password}`;
   openModal({
     title,
-    body: `<p class="muted" style="margin:0">Send this to ${esc(name)}. This is the only time Kerf shows the password.</p>
+    body: `<p class="muted" style="margin:0">Send this to ${esc(name)}. This is the only time the password is shown.</p>
       <div class="card"><div class="card-b" style="display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:13.5px"><span class="faint">Website</span><span class="mono" style="user-select:all;overflow-wrap:anywhere">${esc(site)}</span><span class="faint">Email</span><span class="mono" style="user-select:all;overflow-wrap:anywhere">${esc(email)}</span><span class="faint">Password</span><span class="mono" style="user-select:all">${esc(password)}</span></div></div>
-      <p class="faint" style="margin:0;font-size:12.5px">On a phone, they can open the website and choose “Add to Home Screen” to use Kerf like an app.</p>`,
+      <p class="faint" style="margin:0;font-size:12.5px">On a phone, they can open the website and choose “Add to Home Screen” to use it like an app.</p>`,
     foot: `<button class="btn" data-act="copy" data-text="${esc(text)}">${icon('copy')}Copy</button><button class="btn primary" data-act="close-modal">Done</button>`,
   });
 }
@@ -299,7 +303,7 @@ const AUTH_ACTIONS = {
   },
   'pw-toggle': (el) => { const i = document.getElementById(el.dataset.for); if (!i) return; const show = i.type === 'password'; i.type = show ? 'text' : 'password'; el.textContent = show ? 'Hide' : 'Show'; },
   'pw-new': (el) => { const i = document.getElementById(el.dataset.for); if (i) i.value = makePassword(); },
-  'copy-code': () => { if (S.shop) copyText(`Join ${S.shop.name} on Kerf:\n1. Go to ${location.origin}\n2. Tap “Join a shop”\n3. Enter code ${S.shop.join_code}`); },
+  'copy-code': () => { if (S.shop) copyText(`Join the ${S.shop.name} team app:\n1. Go to ${location.origin}\n2. Tap “New to the team?”\n3. Enter shop code ${S.shop.join_code}`); },
   'new-code': async () => {
     if (!(await confirmBox('Make a new shop code?', 'The old code stops working. People already on the team aren’t affected.', 'New code'))) return;
     try { const j = await teamApi({ action: 'newcode' }); S.shop = { ...S.shop, join_code: j.code }; render(true); toast('New shop code ready'); } catch (e) { toast(e.message, { bad: true }); }

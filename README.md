@@ -1,12 +1,12 @@
-# Kerf
+# Midwest Surfaces — Shop Manager
 
-Quoting, scheduling and job tracking for a countertop fabrication shop.
+Quoting, scheduling, job tracking and slab inventory for **Midwest Surfaces** in Mokena, Illinois. This site is built for one shop: after the owner login is created, no one else can set up a different company here. Employees join with the shop code and the office approves them.
 
-- **Quote builder** — measure in inches (fractions OK), pick stone, edges, sinks and cutouts. Kerf draws the pieces to scale, works out square feet, edge footage, slabs and seams, and prices it as you type. Print or save the customer copy as a PDF.
+- **Quote builder** — measure in inches (fractions OK), pick stone, edges, sinks and cutouts. It draws the pieces to scale, works out square feet, edge footage, slabs and seams, and prices it as you type. Print or save the customer copy as a PDF.
 - **Job board** — Lead → Quoted → Sold → Templated → In fabrication → Installed → Closed, with drag and drop and flags for anything stuck.
 - **Calendar** — templates, fabrication, installs and service calls by crew, with a daily capacity bar.
 - **My Work** — each crew member's jobs for the day on their phone: address, directions, stone, cutouts, notes, and a **Mark done** button that moves the job forward.
-- **Dashboard, customers, payments, checklists, team and price list.**
+- **Dashboard, accounts, payments, checklists, team and price list.**
 - **Job files** — attach drawings, DXF/CAD files, plans, signed contracts and site photos to any job. Crew can snap photos from their phone.
 - **Slab inventory** — serial-numbered slabs and remnants with rack locations, allocated to jobs and marked used when fabrication is completed.
 - **Accounts & contacts** — builders, dealers and homeowners, each with their contacts, plus an on-site contact per job.
@@ -50,22 +50,21 @@ You need two free accounts: **Supabase** (stores the data and logins) and **Verc
 
 4. Click **Deploy**. When it finishes, click the preview to open your site.
 
-### 4. Create your shop
+### 4. Create the owner login
 
-Open the site and tap **Create a shop**. Name the shop and enter the owner's name, email and password. That login has full access.
+Open the site and tap **Create the owner login**. Enter the owner's name, email and password. That login has full access. This only works once.
 
 ### 5. Bring in the crew
 
 1. Go to **Prices & Settings** and enter your real prices and your shop's phone and address (they print on quotes).
 2. Go to **Team**. Your **shop code** is at the top. Tap **Copy invite** and text it to your crew.
-3. Each worker opens the website, taps **Join a shop**, enters the code, their name, email and a password.
+3. Each worker opens the website, taps **New to the team?**, enters the code, their name, email and a password.
 4. Their request shows up under **Join requests** on the Team page. Tap **Approve**, pick their role, and they're in.
 
 You can also set someone up yourself: add them on the Team page and click **Create login** on their card. On a phone, crew can tap **Share → Add to Home Screen** to use Kerf like an app.
 
 Forgot a password? The owner or office opens **Team** → **Manage** on that person's card → **Reset password**.
 
-One website can run many shops. Each shop only ever sees its own data.
 
 ### 6. Optional: turn on the AI helper
 
@@ -94,12 +93,12 @@ Changing prices, settings, the team list and logins is blocked by the database i
 
 ## Costs
 
-- **Vercel**: the free Hobby plan is for personal, non-commercial use, which covers building and showing Kerf. Once the shop runs on it day to day, switch the project to **Pro** in Vercel's settings. Nothing needs to be rebuilt and the address stays the same.
+- **Vercel**: the free Hobby plan is for personal, non-commercial use, which covers building and showing Kerf. Once Midwest Surfaces runs on it day to day, switch the project to **Pro** in Vercel's settings. Nothing needs to be rebuilt and the address stays the same.
 - **Supabase**: the free plan is enough for one shop to start. It includes 1 GB of file storage (thousands of drawings and phone photos); files can be up to 50 MB each. If the shop fills it up, Supabase Pro is $25/month with 100 GB. Free projects can be paused after a long stretch with no use; if that happens, open Supabase and click **Restore**.
 
 ## Using your own web address
 
-In Vercel: your project → **Settings** → **Domains** → add something like `app.yourshop.com` and follow the steps it shows for your domain provider.
+In Vercel: your project → **Settings** → **Domains** → add something like `app.midwestsurfaces.com` (if the shop owns that domain) and follow the steps it shows for your domain provider.
 
 ## If something goes wrong
 

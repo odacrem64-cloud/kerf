@@ -11,27 +11,27 @@ function buildDemo() {
   const demo = true;
 
   const team = [
-    ['Mike Alvarez', 'Owner', '#B33B0B', '(555) 201-4410'],
-    ['Dana Cole', 'Office', '#2D5C9C', '(555) 201-4411'],
-    ['Luis Ortega', 'Templater', '#0F7C80', '(555) 201-4417'],
-    ['Sam Patel', 'Fabricator', '#7650AD', '(555) 201-4415'],
-    ['Ray Jensen', 'Installer', '#2D7A4C', '(555) 201-4418'],
-    ['Tony Brooks', 'Installer', '#A86C12', '(555) 201-4419'],
+    ['Mike Alvarez', 'Owner', '#B33B0B', '(815) 555-0110'],
+    ['Dana Cole', 'Office', '#2D5C9C', '(815) 555-0111'],
+    ['Luis Ortega', 'Templater', '#0F7C80', '(815) 555-0117'],
+    ['Sam Patel', 'Fabricator', '#7650AD', '(815) 555-0115'],
+    ['Ray Jensen', 'Installer', '#2D7A4C', '(815) 555-0118'],
+    ['Tony Brooks', 'Installer', '#A86C12', '(815) 555-0119'],
   ].map(([name, role, color, phone], i) => ({ id: 'demo-t' + (i + 1), name, role, color, phone, active: true, demo }));
   const T = (n) => team.find((m) => m.name.startsWith(n)).id;
 
   const customers = [
-    ['Ann Hendricks', 'Homeowner', '(555) 310-2281', 'ann.hendricks@example.com', '1418 Ridge Ave, Oak Grove'],
-    ['Priya Shah', 'Homeowner', '(555) 310-7720', 'priya.shah@example.com', '77 Linden Ct, Oak Grove'],
-    ['Marcus & Elena Vogel', 'Homeowner', '(555) 310-9034', 'vogelfamily@example.com', '2210 Prairie Path, Westfield'],
-    ['Lakeview Builders', 'Builder', '(555) 400-1200', 'tom@lakeviewbuilders.example.com', '900 Commerce Dr, Westfield'],
-    ['Jordan Kim', 'Homeowner', '(555) 310-4412', 'jkim@example.com', '15 Birch Hollow, Oak Grove'],
-    ['Barbara Nowak', 'Homeowner', '(555) 310-6619', 'bnowak@example.com', '402 W Elm St, Riverside'],
-    ['Tasha Greene Interiors', 'Designer', '(555) 422-8800', 'studio@tashagreene.example.com', '33 Main St Suite 2, Riverside'],
-    ['Green Street Cabinets', 'Cabinet shop', '(555) 433-1015', 'orders@greenstcab.example.com', '118 Green St, Westfield'],
-    ['Dale Ortiz', 'Homeowner', '(555) 310-1187', 'dale.ortiz@example.com', '8 Cedar Bluff Rd, Oak Grove'],
-    ['Rosa Fernandez', 'Homeowner', '(555) 310-5543', 'rosa.f@example.com', '61 Meadow Ln, Riverside'],
-    ['Neil Patel', 'Homeowner', '(555) 310-8890', 'neilp@example.com', '19 Orchard Way, Westfield'],
+    ['Ann Hendricks', 'Homeowner', '(708) 555-0181', 'ann.hendricks@example.com', '1418 Ridge Ave, Mokena, IL'],
+    ['Priya Shah', 'Homeowner', '(815) 555-0120', 'priya.shah@example.com', '77 Linden Ct, Frankfort, IL'],
+    ['Marcus & Elena Vogel', 'Homeowner', '(815) 555-0134', 'vogelfamily@example.com', '2210 Prairie Path, New Lenox, IL'],
+    ['Lakeview Builders', 'Builder', '(815) 555-0100', 'tom@lakeviewbuilders.example.com', '900 Commerce Dr, Mokena, IL'],
+    ['Jordan Kim', 'Homeowner', '(708) 555-0112', 'jkim@example.com', '15 Birch Hollow, Orland Park, IL'],
+    ['Barbara Nowak', 'Homeowner', '(708) 555-0119', 'bnowak@example.com', '402 W Elm St, Tinley Park, IL'],
+    ['Tasha Greene Interiors', 'Designer', '(815) 555-0188', 'studio@tashagreene.example.com', '33 Front St Suite 2, Mokena, IL'],
+    ['Green Street Cabinets', 'Cabinet shop', '(815) 555-0115', 'orders@greenstcab.example.com', '118 Green St, Lockport, IL'],
+    ['Dale Ortiz', 'Homeowner', '(708) 555-0187', 'dale.ortiz@example.com', '8 Cedar Bluff Rd, Homer Glen, IL'],
+    ['Rosa Fernandez', 'Homeowner', '(815) 555-0143', 'rosa.f@example.com', '61 Meadow Ln, Frankfort, IL'],
+    ['Neil Patel', 'Homeowner', '(815) 555-0190', 'neilp@example.com', '19 Orchard Way, New Lenox, IL'],
   ].map(([name, type, phone, email, address], i) => ({ id: 'demo-c' + (i + 1), name, type, phone, email, address, notes: '', createdAt: now - (60 - i * 3) * DAY, demo }));
   const C = (n) => customers.find((x) => x.name.startsWith(n)).id;
 

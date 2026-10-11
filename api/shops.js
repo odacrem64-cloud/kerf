@@ -1,4 +1,4 @@
-// POST /api/shops — create a shop (you become its owner) or ask to join one with its shop code.
+// POST /api/shops — first-time setup of Midwest Surfaces (owner login), or ask to join the team with the shop code.
 // Logins are created here directly, so no confirmation emails are needed.
 const { env, admin, send, fail, readBody, errMsg, isEmail, encode, sessionUser, membership, passwordOk, randomCode, randomId, cleanCode, createLogin, upsert } = require('./_lib');
 
@@ -16,7 +16,7 @@ async function resolveUser(req, b) {
   if (c.user) return { user: c.user, created: true };
   if (c.existing) {
     if (await passwordOk(email, password)) return { user: c.existing };
-    return { error: [409, 'That email already has a Kerf login. Use the same password you sign in with.'] };
+    return { error: [409, 'That email already has a login. Use the same password you sign in with.'] };
   }
   return { error: [500, c.error || 'Couldn’t create your login.'] };
 }
@@ -29,8 +29,10 @@ module.exports = async (req, res) => {
   const name = String(b.name || '').trim().slice(0, 80);
 
   if (b.action === 'create') {
-    const shopName = String(b.shopName || '').trim().slice(0, 80);
-    if (!shopName) return fail(res, 400, 'Name your shop.');
+    const shopName = String(b.shopName || 'Midwest Surfaces').trim().slice(0, 80) || 'Midwest Surfaces';
+    // This site runs one shop: Midwest Surfaces. Once it's set up, nobody can create another.
+    const existingShop = await admin('/rest/v1/shops?select=id&limit=1');
+    if (existingShop.ok && (existingShop.json || []).length) return fail(res, 409, 'Midwest Surfaces is already set up. Sign in, or join the team with the shop code.');
     const who = await resolveUser(req, b);
     if (who.error) return fail(res, who.error[0], who.error[1]);
     const user = who.user;
@@ -54,11 +56,11 @@ module.exports = async (req, res) => {
 
   if (b.action === 'join') {
     const code = cleanCode(b.code);
-    if (code.length < 4) return fail(res, 400, 'Enter the shop code your boss gave you.');
+    if (code.length < 4) return fail(res, 400, 'Enter the shop code from the office.');
     const s = await admin('/rest/v1/shops?select=id,name&join_code=eq.' + encode(code));
     if (!s.ok) return fail(res, 500, s.status === 404 ? 'Run the database setup script in Supabase first.' : 'Couldn’t look up that shop.');
     const shop = (s.json || [])[0];
-    if (!shop) return fail(res, 404, 'No shop has that code. Check it with your boss.');
+    if (!shop) return fail(res, 404, 'That code isn’t right. Check it with the office.');
     const who = await resolveUser(req, b);
     if (who.error) return fail(res, who.error[0], who.error[1]);
     const user = who.user;

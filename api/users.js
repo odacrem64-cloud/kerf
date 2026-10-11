@@ -47,7 +47,7 @@ module.exports = async (req, res) => {
     const taken = await admin('/rest/v1/members?select=user_id&shop_id=eq.' + encode(shopId) + '&team_id=eq.' + encode(teamId));
     if (taken.ok && taken.json && taken.json.length) return fail(res, 409, `${name} already has a login.`);
     const c = await createLogin(email, password, name);
-    if (c.existing) return fail(res, 409, 'That email already has a Kerf login. Ask them to use “Join a shop” with your shop code instead.');
+    if (c.existing) return fail(res, 409, 'That email already has a login. Send them the shop code so they can join with “New to the team?” instead.');
     if (c.error) return fail(res, 500, c.error);
     const m = await upsert('members', { user_id: c.user.id, shop_id: shopId, email, name, team_id: teamId, access, status: 'active', active: true });
     if (!m.ok) return fail(res, 500, errMsg(m, 'Couldn’t save the login.'));
@@ -87,7 +87,7 @@ module.exports = async (req, res) => {
   if (b.action === 'reset') {
     const password = String(b.password || '');
     if (password.length < 8) return fail(res, 400, 'Use a password with at least 8 characters.');
-    if (!(await onlyThisShop(userId, shopId))) return fail(res, 409, 'This person also uses Kerf with another shop, so they need to change their own password.');
+    if (!(await onlyThisShop(userId, shopId))) return fail(res, 409, 'This person’s login is shared with another account, so they need to change their own password.');
     const u = await admin('/auth/v1/admin/users/' + userId, { method: 'PUT', body: { password } });
     if (!u.ok) return fail(res, 500, errMsg(u, 'Couldn’t change the password.'));
     return send(res, 200, { ok: true });

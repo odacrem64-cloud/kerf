@@ -67,7 +67,7 @@ h3{font-size:13px;font-stretch:118%;letter-spacing:.02em}
 .rail{background:var(--rail);color:var(--rail-ink);display:flex;flex-direction:column;padding:18px 12px 14px;gap:4px;overflow-y:auto}
 .brand{display:flex;align-items:center;gap:10px;padding:2px 8px 18px}
 .brand-mark{width:30px;height:30px;flex:none}
-.brand-name{font-family:var(--f-display);font-weight:900;font-stretch:125%;font-size:19px;letter-spacing:.02em;color:#fff}
+.brand-name{font-family:var(--f-display);font-weight:900;font-stretch:118%;font-size:15.5px;line-height:1.15;letter-spacing:.01em;color:#fff}
 :root .brand-name{color:var(--rail-ink)}
 .brand-sub{font-size:10.5px;color:var(--rail-ink-2);letter-spacing:.08em;text-transform:uppercase;margin-top:-2px}
 .nav-item{display:flex;align-items:center;gap:11px;padding:8px 10px;border-radius:var(--r-sm);color:var(--rail-ink-2);background:none;border:0;text-align:left;font-weight:550;font-size:13.5px;width:100%}
@@ -461,7 +461,9 @@ body.authmode .rail,body.authmode .tabbar{display:none!important}
 body.authmode .main{padding-bottom:0}
 .auth-wrap{min-height:100%;display:grid;place-items:center;padding:32px 16px;background:radial-gradient(1200px 500px at 15% -10%,color-mix(in srgb,var(--accent) 9%,transparent),transparent 60%),var(--bg)}
 .auth-card{width:100%;max-width:410px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:28px 26px 24px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:14px}
-.auth-brand{display:flex;align-items:center;gap:10px;font-family:var(--f-display);font-weight:900;font-stretch:125%;font-size:20px;letter-spacing:.03em;margin-bottom:6px}
+.auth-brand{display:flex;align-items:center;gap:12px;font-family:var(--f-display);font-weight:900;font-stretch:112%;font-size:20px;letter-spacing:.01em;margin-bottom:6px}
+.auth-brand span{display:flex;flex-direction:column;line-height:1.15}
+.auth-brand small{font-family:var(--f-body);font-weight:600;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
 .auth-brand .brand-mark{width:34px;height:34px}
 .auth-card h1{font-size:25px}
 .auth-card p{margin:0}

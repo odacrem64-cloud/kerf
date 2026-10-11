@@ -208,7 +208,7 @@ function teamAccessHTML() {
   return `<div class="cols" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))">
     <div class="card"><div class="card-h"><h2>Shop code</h2></div><div class="card-b" style="display:flex;flex-direction:column;gap:10px">
       <div class="shopcode mono" style="user-select:all">${esc(S.shop.join_code || '')}</div>
-      <p class="muted" style="margin:0;font-size:13px">Workers open <span class="mono" style="user-select:all">${esc(location.host)}</span>, tap <b>Join a shop</b>, and enter this code. You approve them here.</p>
+      <p class="muted" style="margin:0;font-size:13px">Workers open <span class="mono" style="user-select:all">${esc(location.host)}</span>, tap <b>New to the team?</b>, and enter this code. You approve them here.</p>
       <div class="btn-row"><button class="btn sm dark" data-act="copy-code">${icon('copy')}Copy invite</button><button class="btn sm ghost" data-act="new-code">${icon('refresh')}New code</button></div>
     </div></div>
     <div class="card"><div class="card-h"><h2>Join requests</h2><span class="faint">${pend.length}</span></div>

@@ -35,8 +35,8 @@ function renderRail() {
     : null;
   rail.innerHTML = `
     ${(() => { const logo = safeImg(cfg().logo); const nm = shopName(); return logo
-      ? `<div class="brand has-logo"><img class="brand-logo" src="${logo}" alt=""><div style="min-width:0"><div class="brand-shop">${esc(nm || 'Your shop')}</div><div class="brand-sub">Kerf</div></div></div>`
-      : `<div class="brand">${BRAND}<div style="min-width:0"><div class="brand-name">KERF</div><div class="brand-sub">${esc(nm || 'Countertop shop')}</div></div></div>`; })()}
+      ? `<div class="brand has-logo"><img class="brand-logo" src="${logo}" alt=""><div style="min-width:0"><div class="brand-shop">${esc(nm || 'Your shop')}</div><div class="brand-sub">${esc(SHOP.app)}</div></div></div>`
+      : `<div class="brand">${BRAND}<div style="min-width:0"><div class="brand-name">${esc(nm || SHOP.name)}</div><div class="brand-sub">${esc(SHOP.city)}</div></div></div>`; })()}
     ${navFor().map((n) => (n ? `<button class="nav-item" data-act="go" data-view="${n.id}" ${act === n.id ? 'aria-current="page"' : ''}>${icon(n.icon)}<span>${n.name}</span>${counts[n.id] ? `<span class="count">${counts[n.id]}</span>` : ''}</button>` : '<div class="nav-sep"></div>')).join('')}
     <div class="rail-foot">
       ${who || `<label class="field"><span style="color:var(--rail-ink-2);font-weight:600">Working as</span>
@@ -58,7 +58,7 @@ function bannerHTML() {
     const why = S.demoReason === 'keys' ? 'This site isn’t connected to Supabase yet. Add the Supabase keys in Vercel (see the setup guide) and redeploy.' : 'Sample shop in this browser only.';
     return `<div class="banner"><b>Demo mode.</b><span>${why}</span>${S.view === 'settings' ? '' : '<button class="btn sm" data-act="go" data-view="settings">Data options</button>'}</div>`;
   }
-  if (S.mode === 'db' && !S.canWrite) return `<div class="banner"><b>View only.</b><span>Ask the owner to share Kerf with you as an Editor to make changes.</span></div>`;
+  if (S.mode === 'db' && !S.canWrite) return `<div class="banner"><b>View only.</b><span>Ask the office to give you edit access.</span></div>`;
   if (S.mode === 'db' && hasSample() && isAdmin() && ['dashboard', 'jobs', 'calendar'].includes(S.view)) {
     return `<div class="banner"><b>Sample data is loaded.</b><span>Items tagged SAMPLE are examples. Remove them when you’re ready to go live.</span><button class="btn sm" data-act="remove-sample">Remove sample data</button></div>`;
   }

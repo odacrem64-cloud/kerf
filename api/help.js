@@ -15,17 +15,17 @@ module.exports = async (req, res) => {
   const user = await sessionUser(req);
   if (!user) return fail(res, 401, 'Sign in to use the helper.');
   const m = await membership(user.id, String(b.shopId || ''));
-  if (!m || m.status !== 'active' || !m.active) return fail(res, 403, 'Join a shop to use the helper.');
+  if (!m || m.status !== 'active' || !m.active) return fail(res, 403, 'Join the team to use the helper.');
   const msgs = (Array.isArray(b.messages) ? b.messages : []).slice(-10)
     .filter((x) => x && (x.role === 'user' || x.role === 'assistant') && typeof x.content === 'string' && x.content.trim())
     .map((x) => ({ role: x.role, content: x.content.slice(0, 1500) }));
   while (msgs.length && msgs[0].role !== 'user') msgs.shift();
   if (!msgs.length || msgs[msgs.length - 1].role !== 'user') return fail(res, 400, 'Ask a question.');
-  const system = `You are the helper inside Kerf, web software for countertop fabrication shops (quoting, job board, calendar, crew work lists). Answer questions about how to use Kerf in plain, friendly words for busy shop owners and installers. Keep answers short: 1–4 sentences or a few numbered steps. Name buttons and pages in **bold** exactly as they appear. Only describe features listed in the guide below; if something isn't in Kerf, say so and suggest the closest thing. For general countertop trade questions (square footage, edge profiles, seams) you can give brief practical answers. Never invent prices, customer data or account details.
+  const system = `You are the helper inside the shop software for Midwest Surfaces, a countertop fabricator in Mokena, Illinois (quoting, job board, calendar, crew work lists, slab inventory). Answer questions about how to use the app in plain, friendly words for busy shop owners and installers. Keep answers short: 1–4 sentences or a few numbered steps. Name buttons and pages in **bold** exactly as they appear. Only describe features listed in the guide below; if something isn't in the app, say so and suggest the closest thing. For general countertop trade questions (square footage, edge profiles, seams) you can give brief practical answers. Never invent prices, customer data or account details.
 
 The person asking is: ${ROLE[m.access] || 'a team member'}. They are on the "${String(b.view || 'dashboard').slice(0, 30)}" page.
 
-KERF GUIDE
+APP GUIDE
 ${guide}`;
   try {
     const r = await fetch('https://api.anthropic.com/v1/messages', {
