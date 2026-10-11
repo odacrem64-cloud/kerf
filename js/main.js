@@ -37,7 +37,7 @@ const ACTIONS = {
   'ej-save': async () => {
     const name = val('#ej-name'); if (!name) { fieldErr('#ej-name', 'Give the job a name'); return; }
     const id = MS.id;
-    await patch('jobs', id, { name, customerId: val('#ej-cust'), address: val('#ej-addr'), salesId: val('#ej-sales'), source: val('#ej-src'), po: val('#ej-po'), updatedAt: Date.now() });
+    await patch('jobs', id, { name, customerId: val('#ej-cust'), address: val('#ej-addr'), salesId: val('#ej-sales'), source: val('#ej-src'), po: val('#ej-po'), siteContact: val('#ej-sc'), sitePhone: val('#ej-sp'), updatedAt: Date.now() });
     closeModal(); toast('Job saved');
   },
   'ej-delete': async () => {
@@ -78,6 +78,7 @@ const ACTIONS = {
   /* schedule */
   'new-act': (el) => activityModal({ jobId: el.dataset.job || (S.view === 'job' ? S.params.id : ''), type: el.dataset.type || 'template', date: el.dataset.date }),
   'edit-act': (el, ev) => { ev.stopPropagation(); activityModal({ id: el.dataset.id }); },
+  'act-status': (el) => { MS.status = el.dataset.v; $$('#act-status button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === MS.status))); },
   'act-type': (el) => { MS.type = el.dataset.v; $$('#act-types button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === MS.type))); },
   'act-crew': (el) => { const id = el.dataset.id; MS.crew = MS.crew.includes(id) ? MS.crew.filter((x) => x !== id) : MS.crew.concat(id); el.setAttribute('aria-pressed', String(MS.crew.includes(id))); },
   'act-pick': (el) => { MS.jobId = el.dataset.id; const b = $('#act-job'); if (b) b.innerHTML = actJobHTML(); },
@@ -99,10 +100,12 @@ const ACTIONS = {
     const name = val('#cu-name'); if (!name) { fieldErr('#cu-name', 'Enter a name'); return; }
     const id = MS.id || uid();
     const prev = MS.id ? customer(MS.id) : {};
-    await put('customers', id, { ...prev, name, phone: val('#cu-phone'), email: val('#cu-email'), type: val('#cu-type'), address: val('#cu-addr'), notes: val('#cu-notes'), createdAt: prev.createdAt || Date.now() });
-    closeModal(); toast('Customer saved');
+    await put('customers', id, { ...prev, name, phone: val('#cu-phone'), email: val('#cu-email'), type: val('#cu-type'), address: val('#cu-addr'), notes: val('#cu-notes'), contacts: MS.contacts.filter((ct) => String(ct.name || ct.phone || ct.email || '').trim()), createdAt: prev.createdAt || Date.now() });
+    closeModal(); toast('Account saved');
   },
-  'cu-delete': async () => { const c = customer(MS.id); if (!c) return; if (await confirmBox(`Delete ${c.name}?`, 'This customer has no jobs. They’ll be removed for everyone.', 'Delete', true)) { await remove('customers', c.id); go('customers'); } },
+  'contact-add': () => { MS.contacts.push({ name: '', role: '', phone: '', email: '' }); const b = $('#cu-contacts'); if (b) b.innerHTML = contactsEditHTML(); const f = document.getElementById('ct-n-' + (MS.contacts.length - 1)); if (f) f.focus(); },
+  'contact-del': (el) => { MS.contacts.splice(+el.dataset.i, 1); const b = $('#cu-contacts'); if (b) b.innerHTML = contactsEditHTML(); },
+  'cu-delete': async () => { const c = customer(MS.id); if (!c) return; if (await confirmBox(`Delete ${c.name}?`, 'This account has no jobs. It’ll be removed for everyone.', 'Delete', true)) { await remove('customers', c.id); go('customers'); } },
   'edit-member': (el) => memberModal(el.dataset.id),
   'tm-color': (el) => { MS.color = el.dataset.v; const b = $('#tm-colors'); if (b) b.innerHTML = tmColorsHTML(); },
   'tm-save': async () => {
@@ -120,7 +123,7 @@ const ACTIONS = {
   /* calendar */
   'cal-move': (el) => { const d = +el.dataset.d; if (S.ui.calMode === 'month') { const x = parseD(S.ui.calDate.slice(0, 8) + '01'); x.setMonth(x.getMonth() + d); S.ui.calDate = dstr(x); } else S.ui.calDate = addDays(S.ui.calDate, 7 * d); render(true); },
   'cal-today': () => { S.ui.calDate = today(); render(true); },
-  'cal-type': (el) => { const v = el.dataset.v; const t = S.ui.calTypes; S.ui.calTypes = t.includes(v) ? t.filter((x) => x !== v) : t.concat(v); render(true); },
+  'cal-type': (el) => { const v = el.dataset.v; const h = S.ui.calHide; S.ui.calHide = h.includes(v) ? h.filter((x) => x !== v) : h.concat(v); render(true); },
   'cal-day': (el) => { S.ui.calDate = el.dataset.date; S.ui.calMode = 'week'; render(true); },
 
   /* quote builder */
@@ -173,12 +176,13 @@ const ACTIONS = {
   'member-photo-remove': async (el) => { await patch('team', el.dataset.id, { photo: null }); closeModal(); toast('Photo removed'); },
 
   /* settings */
-  's-add': (el) => { const s = ensureSDraft(); const l = el.dataset.l; const item = l === 'materials' ? { id: uid(), name: '', group: '', price: 0, color: '#CCCCCC' } : { id: uid(), name: '', price: 0 }; s[l].push(item); s._dirty = true; render(true); const ids = { materials: 'sm-n-', edges: 'sedges-n-', addons: 'saddons-n-' }; const f = document.getElementById(ids[l] + (s[l].length - 1)); if (f) f.focus(); },
+  's-add': (el) => { const s = ensureSDraft(); const l = el.dataset.l; const item = l === 'materials' ? { id: uid(), name: '', group: '', price: 0, color: '#CCCCCC' } : l === 'activityTypes' ? { id: 'at_' + uid(), name: '', color: MEMBER_COLORS[(s.activityTypes || []).length % MEMBER_COLORS.length] } : { id: uid(), name: '', price: 0 }; if (!Array.isArray(s[l])) s[l] = []; s[l].push(item); s._dirty = true; render(true); const ids = { materials: 'sm-n-', edges: 'sedges-n-', addons: 'saddons-n-', activityTypes: 'sat-n-' }; const f = document.getElementById(ids[l] + (s[l].length - 1)); if (f) f.focus(); },
   's-del': (el) => { const s = ensureSDraft(); s[el.dataset.l].splice(+el.dataset.i, 1); s._dirty = true; render(true); },
   's-save': async () => {
     const s = ensureSDraft();
     for (const k of ['materials', 'edges', 'addons']) s[k] = s[k].filter((x) => String(x.name || '').trim()).map((x) => ({ ...x, name: x.name.trim(), price: Number(x.price) || 0 }));
     if (!s.materials.length) { toast('Keep at least one material in the price list', { bad: true }); return; }
+    s.activityTypes = (s.activityTypes || []).filter((x) => String(x.name || '').trim()).map((x) => ({ id: x.id || 'at_' + uid(), name: x.name.trim().slice(0, 30), color: isHex(x.color) ? x.color : '#68716D' }));
     const body = { ...s }; delete body._dirty;
     await saveSettings(body);
     S.sdraft = { ...deepClone(cfg()), _dirty: false };
@@ -205,6 +209,7 @@ document.addEventListener('input', (e) => {
     if (el.dataset.input === 'jobQ' || el.dataset.input === 'custQ') schedule();
     return;
   }
+  if (el.dataset.ct !== undefined && MS && MS.contacts) { const ct = MS.contacts[+el.dataset.ct]; if (ct) ct[el.dataset.f] = el.value; return; }
   if (el.dataset.inputModal && MS) {
     const k = el.dataset.inputModal;
     if (k === 'njq') { MS.q = el.value; const m = $('#nj-menu'); if (m) m.innerHTML = njMenuHTML(); }
@@ -226,8 +231,10 @@ document.addEventListener('change', async (e) => {
   const el = e.target;
   if (!el || !el.dataset) return;
   if (el.dataset.upload && el.files && el.files[0]) {
-    const kind = el.dataset.upload, file = el.files[0];
+    const kind = el.dataset.upload, picked = Array.from(el.files), file = picked[0];
     el.value = '';
+    if (kind === 'jobfiles') { uploadFiles(el.dataset.id, picked); return; }
+    if (kind === 'slabphoto') { try { const url = await readImage(file, { max: 640 }); await patch('slabs', el.dataset.id, { photo: url }); slabModal(el.dataset.id); toast('Photo saved'); } catch (err) { toast(err.message, { bad: true }); } return; }
     try {
       if (kind === 'logo') {
         if (!isAdmin()) { toast('Only the owner or office can change the logo', { bad: true }); return; }
@@ -284,7 +291,7 @@ document.addEventListener('dragstart', (e) => {
   if (!t || !t.closest || !S.canWrite) return;
   const j = t.closest('[data-drag-job]'), a = t.closest('[data-drag-act]');
   if (j) { DRAG = { kind: 'job', id: j.dataset.dragJob }; j.classList.add('dragging'); }
-  else if (a) { DRAG = { kind: 'act', id: a.dataset.dragAct }; a.classList.add('dragging'); }
+  else if (a) { const row = a.closest('[data-drop-member]'); DRAG = { kind: 'act', id: a.dataset.dragAct, from: row ? row.dataset.dropMember : undefined }; a.classList.add('dragging'); }
   else return;
   e.dataTransfer.effectAllowed = 'move';
   try { e.dataTransfer.setData('text/plain', DRAG.id); } catch (err) { /* noop */ }
@@ -309,15 +316,24 @@ document.addEventListener('drop', async (e) => {
     if (j && j.stage !== st) await setStage(j, st);
   } else {
     const a = S.activities.get(d.id); const date = z.dataset.dropDate;
-    if (a && a.date !== date) {
-      await patch('activities', a.id, { date });
-      if (jobOf(a.jobId)) await addNote(a.jobId, `${actType(a.type).name} moved from ${fmtD(a.date)} to ${fmtD(date)}`, 'event');
-      toast(`${actType(a.type).name} moved to ${fmtD(date)}`, { action: { label: 'Undo', run: () => patch('activities', a.id, { date: a.date }) } });
+    const to = z.dataset.dropMember;
+    const reassign = a && to !== undefined && d.from !== undefined && to !== d.from;
+    if (a && (a.date !== date || reassign)) {
+      const upd = { date };
+      let crew = a.crew || [];
+      if (reassign) { crew = crew.filter((x) => x !== d.from); if (to && !crew.includes(to)) crew = crew.concat(to); upd.crew = crew; }
+      await patch('activities', a.id, upd);
+      const tn = actType(a.type).name;
+      const parts = [];
+      if (a.date !== date) parts.push(`moved from ${fmtD(a.date)} to ${fmtD(date)}`);
+      if (reassign) parts.push(`reassigned to ${(member(to) || {}).name || 'no one'}`);
+      if (jobOf(a.jobId)) await addNote(a.jobId, `${tn} ${parts.join(' and ')}`, 'event');
+      toast(`${tn} ${parts.join(', ')}`, { action: { label: 'Undo', run: () => patch('activities', a.id, { date: a.date, crew: a.crew || [] }) } });
     }
   }
 });
 
 /* ---------- boot ---------- */
-Object.assign(ACTIONS, AUTH_ACTIONS, HELP_ACTIONS);
+Object.assign(ACTIONS, AUTH_ACTIONS, HELP_ACTIONS, FILE_ACTIONS, INV_ACTIONS, FORM_ACTIONS);
 window.addEventListener('beforeunload', (e) => { if (S.qdraft && S.qdraft.dirty) { e.preventDefault(); e.returnValue = ''; } });
 kerfBoot();

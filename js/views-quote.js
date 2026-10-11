@@ -68,6 +68,7 @@ function areaHTML(a, ac) {
       <div class="area-opts">
         <label class="field"><span>Material</span><select class="input" id="am-${esc(a.id)}" data-q="area-mat" ${A}>${materialOptions(a)}</select></label>
         <label class="field"><span>Edge profile</span><select class="input" id="ae-${esc(a.id)}" data-q="area-edge" ${A}>${edgeOptions(a)}</select></label>
+        <label class="field"><span>Thickness</span><select class="input" id="ath-${esc(a.id)}" data-q="area-thick" ${A}>${THICKNESS.map((t) => `<option ${(a.thick || '3cm') === t ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
         <label class="check" style="padding-bottom:8px;white-space:nowrap" title="$${a.tearPrice || cfg().tearOutPerSqft}/sq ft"><input type="checkbox" id="atr-${esc(a.id)}" data-q="area-tear" ${A} ${a.tearOut ? 'checked' : ''}> Tear-out</label>
       </div>
       <div>
@@ -204,6 +205,7 @@ function quoteInput(el, final) {
     case 'area-name': if (a) { a.name = el.value; d.dirty = true; quoteRecalc('-'); } return;
     case 'area-mat': if (a && el.value !== '__keep') { a.mat = matSnap(cfg().materials.find((m) => m.id === el.value)); quoteRecalc(a.id); } return;
     case 'area-edge': if (a && el.value !== '__keep') { a.edge = edgeSnap(cfg().edges.find((e) => e.id === el.value)); quoteRecalc(a.id); } return;
+    case 'area-thick': if (a) { a.thick = el.value; d.dirty = true; quoteRefreshHeader(); } return;
     case 'area-tear': if (a) { a.tearOut = el.checked; if (el.checked) a.tearPrice = Number(cfg().tearOutPerSqft) || 0; quoteRecalc(a.id); } return;
     case 'p-label': if (p) { p.label = el.value; quoteRecalc(a.id); } return;
     case 'p-L': case 'p-D': if (p) {

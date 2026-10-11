@@ -7,6 +7,11 @@ Quoting, scheduling and job tracking for a countertop fabrication shop.
 - **Calendar** — templates, fabrication, installs and service calls by crew, with a daily capacity bar.
 - **My Work** — each crew member's jobs for the day on their phone: address, directions, stone, cutouts, notes, and a **Mark done** button that moves the job forward.
 - **Dashboard, customers, payments, checklists, team and price list.**
+- **Job files** — attach drawings, DXF/CAD files, plans, signed contracts and site photos to any job. Crew can snap photos from their phone.
+- **Slab inventory** — serial-numbered slabs and remnants with rack locations, allocated to jobs and marked used when fabrication is completed.
+- **Accounts & contacts** — builders, dealers and homeowners, each with their contacts, plus an on-site contact per job.
+- **Moraware-style scheduling** — Estimate / Confirmed / Complete activities, your own activity types (Saw, CNC, Polish…), and a calendar by crew member.
+- **Printable forms** — a job sheet for the shop floor and a day packet for each crew member.
 - **Your logo** on the menu and on every quote, **profile photos** for the crew, and a **Help** button with an AI helper.
 
 Everyone signs in with their own email and password. Crew logins only see their schedule and job details, not prices or money.
@@ -90,7 +95,7 @@ Changing prices, settings, the team list and logins is blocked by the database i
 ## Costs
 
 - **Vercel**: the free Hobby plan is for personal, non-commercial use, which covers building and showing Kerf. Once the shop runs on it day to day, switch the project to **Pro** in Vercel's settings. Nothing needs to be rebuilt and the address stays the same.
-- **Supabase**: the free plan is enough for one shop to start. Free projects can be paused after a long stretch with no use; if that happens, open Supabase and click **Restore**.
+- **Supabase**: the free plan is enough for one shop to start. It includes 1 GB of file storage (thousands of drawings and phone photos); files can be up to 50 MB each. If the shop fills it up, Supabase Pro is $25/month with 100 GB. Free projects can be paused after a long stretch with no use; if that happens, open Supabase and click **Restore**.
 
 ## Using your own web address
 

@@ -3,13 +3,13 @@
    - "db" mode: Supabase (shared, live, signed-in team)
    - "local" mode: demo shop in this browser (before Supabase is connected)
    ========================================================= */
-const COLLS = ['jobs', 'activities', 'customers', 'team'];
+const COLLS = ['jobs', 'activities', 'customers', 'team', 'files', 'slabs'];
 const LOCAL_KEY = 'kerf-demo-v1';
 const S = {
   mode: 'loading', // loading | db | local
   live: false,
   canWrite: true,
-  jobs: new Map(), activities: new Map(), customers: new Map(), team: new Map(),
+  jobs: new Map(), activities: new Map(), customers: new Map(), team: new Map(), files: new Map(), slabs: new Map(),
   members: new Map(), my: null,
   shopId: '', shop: null, myShops: [],
   notesAll: new Map(), // local mode only
@@ -21,7 +21,7 @@ const S = {
   auth: { screen: null, cfg: null, user: null, err: '', busy: false },
   ui: {
     jobQ: '', jobSales: '', jobShow: 'active', jobMode: store.get('kerf-jobmode', 'board'), jobSort: { k: 'updatedAt', d: -1 },
-    custQ: '', calMode: 'week', calDate: today(), calTypes: ACT_TYPES.map((t) => t.id), calCrew: '',
+    custQ: '', calMode: 'week', calDate: today(), calHide: [], calCrew: '', invQ: '', invKind: 'all', invStatus: 'available',
     mwAll: false, noteDraft: '', noteIssue: false,
   },
   qdraft: null, sdraft: null,
@@ -207,8 +207,8 @@ async function fetchAll(table) {
 }
 const rowsToMap = (rows) => new Map(rows.map((r) => [r.id, { id: r.id, ...(r.data || {}) }]));
 async function loadRemote() {
-  const [jobs, acts, custs, team, settings, members, feed, shop] = await Promise.all([
-    fetchAll('jobs'), fetchAll('activities'), fetchAll('customers'), fetchAll('team'),
+  const [jobs, acts, custs, team, files, slabs, settings, members, feed, shop] = await Promise.all([
+    fetchAll('jobs'), fetchAll('activities'), fetchAll('customers'), fetchAll('team'), fetchAll('files'), fetchAll('slabs'),
     SB.from('settings').select('id,data').eq('id', S.shopId).maybeSingle(),
     SB.from('members').select('*').eq('shop_id', S.shopId),
     SB.from('notes').select('id,data').eq('shop_id', S.shopId).order('at', { ascending: false }).limit(40),
@@ -216,7 +216,7 @@ async function loadRemote() {
   ]);
   for (const r of [settings, members, feed, shop]) if (r.error) throw r.error;
   S.shop = shop.data || null;
-  S.jobs = rowsToMap(jobs); S.activities = rowsToMap(acts); S.customers = rowsToMap(custs); S.team = rowsToMap(team);
+  S.jobs = rowsToMap(jobs); S.activities = rowsToMap(acts); S.customers = rowsToMap(custs); S.team = rowsToMap(team); S.files = rowsToMap(files); S.slabs = rowsToMap(slabs);
   S.settingsDoc = settings.data ? settings.data.data : null;
   S.members = new Map((members.data || []).map((m) => [m.user_id, m]));
   S.feed = (feed.data || []).map((r) => ({ id: r.id, ...r.data }));
@@ -269,12 +269,12 @@ function onChange(t, p) {
 function startRealtime() {
   if (CHANNEL) { try { SB.removeChannel(CHANNEL); } catch (e) { /* noop */ } }
   CHANNEL = SB.channel('kerf-live-' + S.shopId);
-  for (const t of ['jobs', 'activities', 'customers', 'team', 'notes', 'settings', 'members']) {
+  for (const t of ['jobs', 'activities', 'customers', 'team', 'files', 'slabs', 'notes', 'settings', 'members']) {
     CHANNEL.on('postgres_changes', { event: '*', schema: 'public', table: t, filter: 'shop_id=eq.' + S.shopId }, (p) => onChange(t, p));
   }
   CHANNEL.on('postgres_changes', { event: '*', schema: 'public', table: 'shops', filter: 'id=eq.' + S.shopId }, (p) => onChange('shops', p));
   /* Supabase can't filter delete events, so listen for those separately (they only carry the row's id) */
-  for (const t of ['jobs', 'activities', 'customers', 'team', 'notes', 'members']) {
+  for (const t of ['jobs', 'activities', 'customers', 'team', 'files', 'slabs', 'notes', 'members']) {
     CHANNEL.on('postgres_changes', { event: 'DELETE', schema: 'public', table: t }, (p) => onChange(t, p));
   }
   CHANNEL.subscribe((status) => {
@@ -356,6 +356,9 @@ function actIndex() {
   return _idx;
 }
 const actsForJob = (jobId) => actIndex().get(jobId) || [];
+const filesForJob = (jobId) => Array.from(S.files.values()).filter((f) => f.jobId === jobId).sort((a, b) => (b.at || 0) - (a.at || 0));
+const slabsForJob = (jobId) => Array.from(S.slabs.values()).filter((s) => s.jobId === jobId).sort((a, b) => String(a.serial).localeCompare(String(b.serial), undefined, { numeric: true }));
+const slabSqft = (s) => ((Number(s.L) || 0) * (Number(s.W) || 0)) / 144;
 const actsOnDate = (date) => Array.from(S.activities.values()).filter((a) => a.date === date).sort((a, b) => (a.time || '99').localeCompare(b.time || '99'));
 const paidOf = (job) => round2(sum(job.payments || [], (p) => p.amount));
 const balanceOf = (job) => round2((job.total || 0) - paidOf(job));
@@ -409,8 +412,14 @@ async function completeAct(act, done = true) {
   await patch('activities', act.id, { status: done ? 'done' : 'scheduled', doneAt: done ? Date.now() : null, doneBy: done ? S.me || '' : '' });
   if (!job) return;
   const tname = actType(act.type).name;
-  await addNote(job.id, `${tname} ${done ? 'marked done' : 'reopened'} (${fmtD(act.date)})`, 'event');
+  await addNote(job.id, `${tname} ${done ? 'marked complete' : 'reopened'} (${fmtD(act.date)})`, 'event');
   if (!done) return;
+  /* like Moraware: completing fabrication uses up the slabs allocated to the job */
+  if (act.type === 'fabrication') {
+    const used = slabsForJob(job.id).filter((s) => s.status === 'allocated');
+    for (const s of used) await patch('slabs', s.id, { status: 'used', usedAt: Date.now() });
+    if (used.length) await addNote(job.id, `${used.length} slab${used.length === 1 ? '' : 's'} marked used: ${used.map((s) => s.serial).join(', ')}`, 'event');
+  }
   const target = { template: 'templated', fabrication: 'fabrication', install: 'installed' }[act.type];
   if (target && stageIdx(job.stage) > -1 && stageIdx(job.stage) < stageIdx(target)) {
     await setStage(job, target, { quiet: true });
@@ -431,6 +440,8 @@ async function recordPayment(job, pay) {
 }
 async function deleteJob(job) {
   for (const a of actsForJob(job.id).slice()) await remove('activities', a.id);
+  for (const f of filesForJob(job.id)) await deleteFile(f, true);
+  for (const s of slabsForJob(job.id)) if (s.status === 'allocated') await patch('slabs', s.id, { status: 'available', jobId: null });
   if (S.mode === 'db') {
     try { await sbRun(() => SB.from('notes').delete().eq('job_id', job.id)); } catch (e) { /* history stays if not allowed */ }
   } else {

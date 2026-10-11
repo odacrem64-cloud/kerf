@@ -120,14 +120,26 @@ const stageIdx = (id) => STAGES.findIndex((s) => s.id === id);
 const stageColor = (id) => `var(--s-${id})`;
 const stagePill = (id) => `<span class="pill" style="--c:${stageColor(id)}">${esc(stageName(id))}</span>`;
 
-const ACT_TYPES = [
-  { id: 'template', name: 'Template', color: 'var(--t-template)' },
-  { id: 'fabrication', name: 'Fabrication', color: 'var(--t-fab)' },
-  { id: 'install', name: 'Install', color: 'var(--t-install)' },
-  { id: 'service', name: 'Service', color: 'var(--t-service)' },
-  { id: 'other', name: 'Other', color: 'var(--t-other)' },
+const BASE_ACT_TYPES = [
+  { id: 'template', name: 'Template', color: 'var(--t-template)', base: true },
+  { id: 'fabrication', name: 'Fabrication', color: 'var(--t-fab)', base: true },
+  { id: 'install', name: 'Install', color: 'var(--t-install)', base: true },
+  { id: 'service', name: 'Service', color: 'var(--t-service)', base: true },
+  { id: 'other', name: 'Other', color: 'var(--t-other)', base: true },
 ];
-const actType = (id) => ACT_TYPES.find((t) => t.id === id) || ACT_TYPES[4];
+/* Moraware-style: shops add their own activity types (Saw, CNC, Polish, Delivery…) in Settings */
+const isHex = (c) => /^#[0-9a-f]{6}$/i.test(String(c || ''));
+function actTypes() {
+  const extra = (typeof cfg === 'function' && Array.isArray(cfg().activityTypes) ? cfg().activityTypes : [])
+    .filter((t) => t && t.id && String(t.name || '').trim()).map((t) => ({ id: String(t.id), name: String(t.name).trim(), color: isHex(t.color) ? t.color : '#68716D' }));
+  return BASE_ACT_TYPES.slice(0, 4).concat(extra, BASE_ACT_TYPES.slice(4));
+}
+const actType = (id) => actTypes().find((t) => t.id === id) || { ...BASE_ACT_TYPES[4], id: id || 'other' };
+/* activity status, as in Moraware: Estimate (tentative) → Confirmed (agreed with customer) → Complete */
+const ACT_STATUS = [{ id: 'estimate', name: 'Estimate' }, { id: 'scheduled', name: 'Confirmed' }, { id: 'done', name: 'Complete' }];
+const actStatusName = (s) => (ACT_STATUS.find((x) => x.id === s) || ACT_STATUS[1]).name;
+const THICKNESS = ['3cm', '2cm', '1.2cm', '4cm', 'Other'];
+const fmtBytes = (n) => { n = Number(n) || 0; return n < 1024 ? n + ' B' : n < 1048576 ? Math.round(n / 1024) + ' KB' : (n / 1048576).toFixed(n < 10485760 ? 1 : 0) + ' MB'; };
 const DURATIONS = ['', '1 hr', '2 hrs', '3 hrs', 'Half day', 'Full day', '2 days'];
 const ROLES = ['Owner', 'Office', 'Sales', 'Templater', 'Fabricator', 'Installer', 'Helper'];
 const SOURCES = ['Walk-in', 'Builder', 'Designer', 'Cabinet shop', 'Referral', 'Website', 'Home show', 'Repeat customer'];
@@ -144,7 +156,7 @@ const MEMBER_COLORS = ['#B33B0B', '#2D5C9C', '#0F7C80', '#7650AD', '#2D7A4C', '#
 const AREA_PRESETS = ['Kitchen', 'Island', 'Vanity', 'Bar top', 'Laundry', 'Fireplace', 'Outdoor kitchen', 'Shower curb & niche'];
 
 const DEFAULT_SETTINGS = {
-  shopName: '', shopPhone: '', shopEmail: '', shopAddress: '', logo: '',
+  shopName: '', shopPhone: '', shopEmail: '', shopAddress: '', logo: '', activityTypes: [],
   taxRate: 0, depositPct: 50, minCharge: 1200, tearOutPerSqft: 8, quoteValidDays: 30,
   slabL: 126, slabW: 63,
   capInstallSqft: 160, capTemplates: 4,
@@ -211,6 +223,10 @@ const ICONS = {
   cash: '<rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 9v.01M18 15v.01"/>',
   undo: '<path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/>',
   dup: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M4 16V5a1 1 0 0 1 1-1h11"/>',
+  clip: '<path d="M20.5 11.5l-8.2 8.2a5 5 0 0 1-7-7l8.6-8.6a3.4 3.4 0 0 1 4.8 4.8l-8.6 8.6a1.7 1.7 0 0 1-2.4-2.4l7.9-7.9"/>',
+  slab: '<rect x="3" y="6" width="18" height="12" rx="1.5"/><path d="M3 14l18-5"/>',
+  print: '<path d="M7 9V3h10v6M7 17H4v-7h16v7h-3"/><rect x="7" y="14" width="10" height="7"/>',
+  camera: '<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
   refresh: '<path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/>',
   help: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.3a2.6 2.6 0 0 1 5 .9c0 1.7-2.5 2.2-2.5 3.8M12 17.2v.01"/>',
 };

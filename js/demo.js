@@ -37,7 +37,7 @@ function buildDemo() {
 
   const P = (label, L, D, edges = 'f', kind = 'top') => ({ id: uid(), label, L, D, kind, edges: { f: edges.includes('f'), b: edges.includes('b'), l: edges.includes('l'), r: edges.includes('r') } });
   const area = (name, mat, edge, pieces, addons = [], tearOut = false) => ({
-    id: uid(), name, mat: matSnap(M[mat]), edge: edgeSnap(E[edge]), tearOut, tearPrice: c.tearOutPerSqft,
+    id: uid(), name, mat: matSnap(M[mat]), edge: edgeSnap(E[edge]), thick: '3cm', tearOut, tearPrice: c.tearOutPerSqft,
     addons: addons.map(([id, n]) => ({ id, name: A[id].name, price: A[id].price, count: n })), pieces,
   });
   const quote = (areas, extra = {}) => ({ areas, lines: [], discount: { type: 'pct', value: 0 }, taxRate: 0, depositPct: 50, minCharge: c.minCharge, validDays: 30, notes: '', createdAt: now - 10 * DAY, ...extra });
@@ -97,5 +97,20 @@ function buildDemo() {
   addJob({ name: 'Primary bathroom', cust: C('Rosa'), stage: 'lead', age: 5, source: 'Home show', quote: null });
   addJob({ name: 'Kitchen — marble', cust: C('Neil'), stage: 'lost', age: 30, quote: quote(kitchen('m8', 'e6', false)), notes: [['event', 'Moved from Quoted to Lost — went with a big-box store', T('Mike'), 12]] });
 
-  return { team, customers, jobs, activities: acts, notes };
+  /* slab inventory: some allocated to jobs in production, some used, a few remnants */
+  const slabs = [];
+  let sn = 1000;
+  const J = (num) => (jobs.find((x) => x.number === num) || {}).id || null;
+  const slab = (name, mat, n, o = {}) => { for (let i = 0; i < n; i++) { const m = M[mat]; slabs.push({ id: 'demo-sl' + (++sn), serial: 'S-' + sn, kind: 'slab', status: 'available', name, matId: mat, group: m.name, color: m.color, thick: '3cm', L: mat === 'm7' ? 128 : 126, W: mat === 'm7' ? 77 : 63, location: o.loc || 'Rack A' + ((sn % 6) + 1), lot: o.lot || '', supplier: o.sup || 'MSI', cost: o.cost || 0, notes: '', receivedAt: now - (o.age || 20) * DAY, demo, ...(o.s ? o.s(i) : {}) }); } };
+  slab('Taj Mahal', 'm7', 4, { loc: 'Rack B1', lot: 'TM-2291', sup: 'Stone Source', cost: 2150, s: (i) => (i < 3 ? { status: 'allocated', jobId: J('J-1033') } : {}) });
+  slab('Steel Grey', 'm1', 6, { lot: 'SG-118', sup: 'Granite Depot', cost: 690, s: (i) => (i < 2 ? { status: 'allocated', jobId: J('J-1034') } : i < 4 ? { status: 'allocated', jobId: J('J-1035') } : {}) });
+  slab('Calacatta Laza', 'm6', 5, { lot: 'CL-77', sup: 'MSI', cost: 1480, s: (i) => (i < 2 ? { status: 'used', jobId: J('J-1031'), usedAt: now - 9 * DAY } : {}) });
+  slab('Pure White', 'm4', 3, { lot: 'PW-402', sup: 'MSI', cost: 820, s: (i) => (i < 1 ? { status: 'used', jobId: J('J-1032'), usedAt: now - 3 * DAY } : {}) });
+  slab('Absolute Black', 'm3', 2, { lot: 'AB-09', sup: 'Granite Depot', cost: 1150 });
+  slab('Fantasy Brown', 'm8', 1, { lot: 'FB-31', sup: 'Stone Source', cost: 1900, loc: 'Yard' });
+  const rem = (parentSerial, L, W, loc) => { const p = slabs.find((x) => x.serial === parentSerial); slabs.push({ ...p, id: 'demo-sl-r' + slabs.length, serial: parentSerial + '-R1', kind: 'remnant', status: 'available', jobId: null, parentId: p.id, L, W, location: loc, cost: 0, usedAt: null }); };
+  rem('S-1011', 54, 26, 'Remnant rack');
+  rem('S-1016', 38, 22.5, 'Remnant rack');
+
+  return { team, customers, jobs, activities: acts, notes, files: [], slabs };
 }

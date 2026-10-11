@@ -61,7 +61,7 @@ $$;
 do $$
 declare t text;
 begin
-  foreach t in array array['jobs', 'activities', 'customers', 'team', 'notes', 'settings'] loop
+  foreach t in array array['jobs', 'activities', 'customers', 'team', 'notes', 'settings', 'files', 'slabs'] loop
     execute format(
       'create table if not exists public.%I (
          id         text primary key,
@@ -92,7 +92,7 @@ end $$;
 do $$
 declare t text;
 begin
-  foreach t in array array['jobs', 'activities', 'customers', 'team', 'notes', 'settings'] loop
+  foreach t in array array['jobs', 'activities', 'customers', 'team', 'notes', 'settings', 'files', 'slabs'] loop
     execute format('drop trigger if exists kerf_touch on public.%I', t);
     execute format('create trigger kerf_touch before update on public.%I for each row execute function public.kerf_touch()', t);
   end loop;
@@ -118,7 +118,7 @@ create or replace function public.kerf_patch(tbl text, doc_id text, patch jsonb)
 language plpgsql security invoker set search_path = public as $$
 declare n integer;
 begin
-  if tbl not in ('jobs', 'activities', 'customers', 'team', 'notes', 'settings') then
+  if tbl not in ('jobs', 'activities', 'customers', 'team', 'notes', 'settings', 'files', 'slabs') then
     raise exception 'Unknown table %', tbl using errcode = '22023';
   end if;
   execute format('update public.%I set data = public.kerf_jsonb_merge(data, $1) where id = $2', tbl) using patch, doc_id;
@@ -133,14 +133,14 @@ do $$
 declare t text;
 declare p text;
 begin
-  foreach t in array array['jobs', 'activities', 'customers', 'team', 'notes', 'settings'] loop
+  foreach t in array array['jobs', 'activities', 'customers', 'team', 'notes', 'settings', 'files', 'slabs'] loop
     foreach p in array array['kerf_read', 'kerf_insert', 'kerf_update', 'kerf_delete'] loop
       execute format('drop policy if exists %I on public.%I', p, t);
     end loop;
     execute format('create policy kerf_read on public.%I for select to authenticated using (public.kerf_is_member(shop_id))', t);
   end loop;
   -- everyday shop data: every active member writes; only owner/office/sales delete
-  foreach t in array array['jobs', 'activities', 'customers'] loop
+  foreach t in array array['jobs', 'activities', 'customers', 'files', 'slabs'] loop
     execute format('create policy kerf_insert on public.%I for insert to authenticated with check (public.kerf_is_member(shop_id))', t);
     execute format('create policy kerf_update on public.%I for update to authenticated using (public.kerf_is_member(shop_id)) with check (public.kerf_is_member(shop_id))', t);
     execute format('create policy kerf_delete on public.%I for delete to authenticated using (public.kerf_is_staff(shop_id))', t);
@@ -195,10 +195,10 @@ revoke execute on function public.kerf_set_my_photo(text, text) from public, ano
 grant execute on function public.kerf_set_my_photo(text, text) to authenticated;
 
 -- ---------- Permissions ----------
-revoke all on public.shops, public.members, public.jobs, public.activities, public.customers, public.team, public.notes, public.settings from anon;
+revoke all on public.shops, public.members, public.jobs, public.activities, public.customers, public.team, public.notes, public.settings, public.files, public.slabs from anon;
 grant select, update on public.shops to authenticated;
 grant select, update, delete on public.members to authenticated;
-grant select, insert, update, delete on public.jobs, public.activities, public.customers, public.team, public.notes, public.settings to authenticated;
+grant select, insert, update, delete on public.jobs, public.activities, public.customers, public.team, public.notes, public.settings, public.files, public.slabs to authenticated;
 revoke execute on function public.kerf_patch(text, text, jsonb) from public, anon;
 grant execute on function public.kerf_patch(text, text, jsonb) to authenticated;
 grant execute on function public.kerf_jsonb_merge(jsonb, jsonb) to authenticated;
@@ -206,7 +206,7 @@ grant execute on function public.kerf_is_member(text), public.kerf_is_staff(text
 do $$
 begin
   if exists (select 1 from pg_roles where rolname = 'service_role') then
-    grant all on public.shops, public.members, public.jobs, public.activities, public.customers, public.team, public.notes, public.settings to service_role;
+    grant all on public.shops, public.members, public.jobs, public.activities, public.customers, public.team, public.notes, public.settings, public.files, public.slabs to service_role;
     grant execute on function public.kerf_patch(text, text, jsonb) to service_role;
   end if;
 end $$;
@@ -216,12 +216,32 @@ do $$
 declare t text;
 begin
   if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
-    foreach t in array array['jobs', 'activities', 'customers', 'team', 'notes', 'settings', 'members', 'shops'] loop
+    foreach t in array array['jobs', 'activities', 'customers', 'team', 'notes', 'settings', 'files', 'slabs', 'members', 'shops'] loop
       begin
         execute format('alter publication supabase_realtime add table public.%I', t);
       exception when duplicate_object then null;
       end;
     end loop;
+  end if;
+end $$;
+
+-- ---------- Job files (drawings, photos, PDFs) ----------
+-- Stored privately as  <shop id>/<job id>/<file>.  Only that shop's team can open them.
+do $$
+begin
+  if exists (select 1 from information_schema.schemata where schema_name = 'storage') then
+    insert into storage.buckets (id, name, public, file_size_limit)
+      values ('kerf-files', 'kerf-files', false, 52428800)
+      on conflict (id) do update set public = false, file_size_limit = excluded.file_size_limit;
+    drop policy if exists kerf_files_read on storage.objects;
+    drop policy if exists kerf_files_insert on storage.objects;
+    drop policy if exists kerf_files_delete on storage.objects;
+    create policy kerf_files_read on storage.objects for select to authenticated
+      using (bucket_id = 'kerf-files' and public.kerf_is_member((storage.foldername(name))[1]));
+    create policy kerf_files_insert on storage.objects for insert to authenticated
+      with check (bucket_id = 'kerf-files' and public.kerf_is_member((storage.foldername(name))[1]));
+    create policy kerf_files_delete on storage.objects for delete to authenticated
+      using (bucket_id = 'kerf-files' and public.kerf_is_staff((storage.foldername(name))[1]));
   end if;
 end $$;
 

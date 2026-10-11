@@ -7,7 +7,8 @@ const NAV = [
   { id: 'calendar', name: 'Calendar', icon: 'cal' },
   { id: 'mywork', name: 'My Work', icon: 'work' },
   null,
-  { id: 'customers', name: 'Customers', icon: 'users' },
+  { id: 'customers', name: 'Accounts', icon: 'users' },
+  { id: 'inventory', name: 'Inventory', icon: 'slab' },
   { id: 'team', name: 'Team', icon: 'team' },
   { id: 'settings', name: 'Prices & Settings', icon: 'tag' },
 ];
@@ -15,8 +16,8 @@ const VIEWS = {};
 const IS_MAC = /Mac|iPhone|iPad/.test((navigator && (navigator.userAgentData && navigator.userAgentData.platform || navigator.platform)) || '');
 const navActive = () => ({ job: 'jobs', quote: 'jobs', customer: 'customers' }[S.view] || S.view);
 
-const CREW_VIEWS = ['mywork', 'calendar', 'job'];
-const navFor = () => (isCrew() ? NAV.filter((n) => n && ['mywork', 'calendar'].includes(n.id)) : NAV);
+const CREW_VIEWS = ['mywork', 'calendar', 'job', 'inventory'];
+const navFor = () => (isCrew() ? NAV.filter((n) => n && ['mywork', 'calendar', 'inventory'].includes(n.id)) : NAV);
 function renderRail() {
   const rail = $('#rail');
   if (!rail) return;
@@ -47,8 +48,8 @@ function renderTabbar() {
   const tb = $('#tabbar');
   if (!tb) return;
   const act = navActive();
-  const items = isCrew() ? [['mywork', 'My Work', 'work'], ['calendar', 'Calendar', 'cal']] : [['dashboard', 'Home', 'home'], ['jobs', 'Jobs', 'board'], ['calendar', 'Calendar', 'cal'], ['mywork', 'My Work', 'work']];
-  const moreOn = ['customers', 'team', 'settings'].includes(act);
+  const items = isCrew() ? [['mywork', 'My Work', 'work'], ['calendar', 'Calendar', 'cal'], ['inventory', 'Slabs', 'slab']] : [['dashboard', 'Home', 'home'], ['jobs', 'Jobs', 'board'], ['calendar', 'Calendar', 'cal'], ['mywork', 'My Work', 'work']];
+  const moreOn = ['customers', 'inventory', 'team', 'settings'].includes(act);
   tb.innerHTML = items.map(([id, name, ic]) => `<button data-act="go" data-view="${id}" ${act === id ? 'aria-current="page"' : ''}>${icon(ic)}<span>${name}</span></button>`).join('')
     + `<button data-act="more" ${moreOn ? 'aria-current="page"' : ''}>${icon('more')}<span>More</span></button>`;
 }
@@ -67,7 +68,7 @@ function topbarHTML(r) {
   const crumb = r.crumb ? `<span class="crumb">${r.crumb}</span>` : '';
   const back = r.back ? `<button class="btn icon ghost" data-act="go" data-view="${r.back.view}" ${r.back.id ? `data-id="${esc(r.back.id)}"` : ''} aria-label="Back">${icon('back')}</button>` : '';
   const newBtn = r.noNew || !S.canWrite || isCrew() ? '' : `<button class="btn primary" data-act="new-job">${icon('plus')}<span class="lbl">New quote</span></button>`;
-  return `<header class="topbar">${back}<h1>${crumb}${r.title}</h1>${r.actions || ''}<button class="search-btn" data-act="palette" aria-label="Search jobs and customers">${icon('search')}<span class="lbl">Search jobs, customers</span><kbd>${IS_MAC ? '⌘K' : 'Ctrl K'}</kbd></button>${newBtn}</header>`;
+  return `<header class="topbar">${back}<h1>${crumb}${r.title}</h1>${r.actions || ''}<button class="search-btn" data-act="palette" aria-label="Search jobs and customers">${icon('search')}<span class="lbl">Search jobs, customers</span><kbd>${IS_MAC ? '⌘K' : 'Ctrl K'}</kbd></button><button class="btn icon help-top" data-act="help-open" aria-label="Help">${icon('help')}</button>${newBtn}</header>`;
 }
 function skeletonHTML() {
   return `<header class="topbar"><h1>Loading your shop…</h1></header><div class="skeleton" aria-busy="true"><i></i><i style="height:120px"></i><i style="height:220px"></i></div>`;

@@ -161,7 +161,7 @@ function jobCardHTML(j) {
     <div class="name">${esc(j.name)}</div>
     <div class="meta">${esc(c.name || '')}</div>
     ${j.material ? `<div class="meta"><span class="swatch" style="background:${esc(j.materialColor || '#ccc')}"></span><span>${esc(j.material)}</span>${j.sqft ? `<span class="faint">· ${sqft1(j.sqft)} ft²</span>` : ''}</div>` : ''}
-    <div class="foot">${na ? `<span class="tag" style="background:color-mix(in srgb,${actType(na.type).color} 14%,transparent);color:${actType(na.type).color}">${esc(actType(na.type).name)} ${relDay(na.date)}</span>` : att.length ? `<span class="tag ${att[0].level}">${esc(att[0].text.split(' — ')[0])}</span>` : ''}<span style="margin-left:auto">${sales ? avatar(sales) : ''}</span></div>
+    <div class="foot">${(() => { const nf = filesForJob(j.id).length; return nf ? `<span class="tag" title="${nf} file${nf === 1 ? '' : 's'}">${icon('clip', 'class="tagicon"')}${nf}</span>` : ''; })()}${na ? `<span class="tag" style="background:color-mix(in srgb,${actType(na.type).color} 14%,transparent);color:${actType(na.type).color}">${esc(actType(na.type).name)} ${relDay(na.date)}</span>` : att.length ? `<span class="tag ${att[0].level}">${esc(att[0].text.split(' — ')[0])}</span>` : ''}<span style="margin-left:auto">${sales ? avatar(sales) : ''}</span></div>
   </div>`;
 }
 function sortForColumn(list) {
@@ -225,14 +225,14 @@ VIEWS.job = ({ id }) => {
   const attHTML = att.length ? `<div class="banner" style="background:${att.some((a) => a.level === 'bad') ? 'var(--bad-soft)' : 'var(--warn-soft)'}">${att.map((a) => `<span>• ${esc(a.text)}</span>`).join('')}</div>` : '';
 
   const quoteCard = `<div class="card"><div class="card-h"><h2>${C ? 'Stone & pieces' : 'Quote'}</h2>${q && !C ? `<button class="btn sm" data-act="quote-doc" data-id="${esc(j.id)}">${icon('doc')}Customer copy</button>` : ''}${W ? `<button class="btn sm ${q ? '' : 'primary'}" data-act="go" data-view="quote" data-id="${esc(j.id)}">${icon('ruler')}${q ? 'Edit quote' : 'Build quote'}</button>` : ''}</div>
-    ${q ? `<div class="rows">${q.areas.map((a, i) => `<div class="row"><span class="swatch" style="background:${esc(a.mat ? a.mat.color : '#ccc')}"></span><span class="grow"><span class="t1">${esc(a.name)}</span><span class="t2">${esc(a.mat ? a.mat.name : '')} · ${esc(a.edge ? a.edge.name : '')} edge${(a.addons || []).filter((x) => x.count).length ? ' · ' + esc((a.addons || []).filter((x) => x.count).map((x) => (x.count > 1 ? x.count + '× ' : '') + x.name).join(', ')) : ''}</span></span><span class="right num">${C ? '' : `<b>${money(calc.areas[i].total)}</b><br>`}<span class="faint">${sqft1(calc.areas[i].sqft)} ft²</span></span></div>`).join('')}</div>
+    ${q ? `<div class="rows">${q.areas.map((a, i) => `<div class="row"><span class="swatch" style="background:${esc(a.mat ? a.mat.color : '#ccc')}"></span><span class="grow"><span class="t1">${esc(a.name)}</span><span class="t2">${esc(a.mat ? a.mat.name : '')}${a.thick ? ' · ' + esc(a.thick) : ''} · ${esc(a.edge ? a.edge.name : '')} edge${(a.addons || []).filter((x) => x.count).length ? ' · ' + esc((a.addons || []).filter((x) => x.count).map((x) => (x.count > 1 ? x.count + '× ' : '') + x.name).join(', ')) : ''}</span></span><span class="right num">${C ? '' : `<b>${money(calc.areas[i].total)}</b><br>`}<span class="faint">${sqft1(calc.areas[i].sqft)} ft²</span></span></div>`).join('')}</div>
       <div class="card-b" style="border-top:1px solid var(--line)"><div class="qstats"><div><b>${sqft1(calc.sqft)}</b><span>SQ FT</span></div><div><b>${calc.nest.slabs}</b><span>SLAB${calc.nest.slabs === 1 ? '' : 'S'} EST.</span></div><div><b>${calc.nest.seams}</b><span>SEAM${calc.nest.seams === 1 ? '' : 'S'}</span></div></div></div>`
       : `<div class="empty"><b>No quote yet.</b><span>${C ? 'The office hasn’t priced this job yet.' : 'Measure in inches, pick the stone, and Kerf prices it in real time.'}</span></div>`}
   </div>`;
 
   const schedCard = `<div class="card"><div class="card-h"><h2>Schedule</h2></div>
     <div class="rows">${acts.length ? acts.map((a) => actRowHTML(a, { date: true })).join('') : '<div class="empty">Nothing scheduled yet.</div>'}</div>
-    ${W ? `<div class="card-b btn-row" style="border-top:1px solid var(--line)">${ACT_TYPES.slice(0, 4).map((t) => `<button class="btn sm" data-act="new-act" data-job="${esc(j.id)}" data-type="${t.id}">${icon('plus')}${t.name}</button>`).join('')}</div>` : ''}
+    ${W ? `<div class="card-b btn-row" style="border-top:1px solid var(--line)">${actTypes().filter((t) => t.id !== 'other').slice(0, 8).map((t) => `<button class="btn sm" data-act="new-act" data-job="${esc(j.id)}" data-type="${t.id}">${icon('plus')}${t.name}</button>`).join('')}</div>` : ''}
   </div>`;
 
   const notes = notesForJob(j.id);
@@ -251,10 +251,12 @@ VIEWS.job = ({ id }) => {
     ${(j.payments || []).length ? `<div style="display:flex;flex-direction:column;gap:4px;margin-top:6px">${j.payments.map((p) => `<div class="line" style="font-size:12.5px"><span class="faint">${esc(fmtDshort(p.date))} · ${esc(p.method)}${p.note ? ' · ' + esc(p.note) : ''}</span><span>${money2(p.amount)}</span></div>`).join('')}</div>` : ''}
   </div></div>`;
 
-  const custCard = `<div class="card"><div class="card-h"><h2>Customer</h2>${C ? '' : `<button class="btn sm" data-act="go" data-view="customer" data-id="${esc(c.id || '')}">Open</button>`}</div><div class="card-b" style="display:flex;flex-direction:column;gap:8px">
+  const custCard = `<div class="card"><div class="card-h"><h2>Account</h2>${C ? '' : `<button class="btn sm" data-act="go" data-view="customer" data-id="${esc(c.id || '')}">Open</button>`}</div><div class="card-b" style="display:flex;flex-direction:column;gap:8px">
     <div><b style="font-size:15px">${esc(c.name || 'No customer')}</b> ${c.type ? `<span class="tag">${esc(c.type)}</span>` : ''}</div>
     ${c.phone ? `<div style="display:flex;gap:8px;align-items:center"><span class="mono" style="user-select:all">${esc(c.phone)}</span><button class="btn sm ghost" data-act="copy" data-text="${esc(c.phone)}">${icon('copy')}Copy</button></div>` : ''}
     ${c.email ? `<div class="muted" style="user-select:all;overflow-wrap:anywhere">${esc(c.email)}</div>` : ''}
+    ${j.siteContact || j.sitePhone ? `<div class="contact" style="border-top:1px solid var(--line);padding-top:8px"><div class="eyebrow">On-site contact</div><div><b>${esc(j.siteContact || '')}</b></div>${j.sitePhone ? `<div><span class="mono" style="user-select:all">${esc(j.sitePhone)}</span> <button class="btn sm ghost" data-act="copy" data-text="${esc(j.sitePhone)}">${icon('copy')}Copy</button></div>` : ''}</div>` : ''}
+    ${(c.contacts || []).length ? `<div class="contacts" style="border-top:1px solid var(--line);padding-top:8px"><div class="eyebrow">Account contacts</div>${c.contacts.map(contactLine).join('')}</div>` : ''}
   </div></div>`;
   const site = j.address || c.address || '';
   const detailsCard = `<div class="card"><div class="card-h"><h2>Job details</h2>${W ? `<button class="btn sm" data-act="edit-job" data-id="${esc(j.id)}">${icon('edit')}Edit</button>` : ''}</div><div class="card-b"><div class="facts">
@@ -272,7 +274,7 @@ VIEWS.job = ({ id }) => {
     back: { view: C ? 'mywork' : 'jobs' },
     crumb: `<span class="mono">${esc(j.number)}</span> · ${esc(c.name || '')} ${demoTag(j)}`,
     title: esc(j.name),
-    actions: `${j.stage === 'lost' ? stagePill('lost') : ''}${lostBtn}`,
-    body: `${stepper}${C ? '' : attHTML}<div class="cols"><div class="stack">${quoteCard}${schedCard}${notesCard}</div><div class="stack">${C ? '' : moneyCard}${checkCard}${custCard}${detailsCard}</div></div>`,
+    actions: `${j.stage === 'lost' ? stagePill('lost') : ''}<button class="btn sm" data-act="print-jobsheet" data-id="${esc(j.id)}">${icon('print')}<span class="lbl">Job sheet</span></button>${lostBtn}`,
+    body: `${stepper}${C ? '' : attHTML}<div class="cols"><div class="stack">${quoteCard}${schedCard}${filesCardHTML(j)}${notesCard}</div><div class="stack">${C ? '' : moneyCard}${materialCardHTML(j)}${checkCard}${custCard}${detailsCard}</div></div>`,
   };
 };

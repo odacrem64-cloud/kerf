@@ -1,8 +1,8 @@
 /* =========================================================
-   Calendar, My Work, Customers, Team, Settings
+   Calendar, My Work, Accounts, Team, Settings
    ========================================================= */
 function calFilter(a) {
-  if (!S.ui.calTypes.includes(a.type)) return false;
+  if (S.ui.calHide.includes(a.type)) return false;
   if (S.ui.calCrew && !(a.crew || []).includes(S.ui.calCrew)) return false;
   return true;
 }
@@ -11,8 +11,8 @@ function actBlockHTML(a) {
   const t = actType(a.type);
   const crew = (a.crew || []).map(member).filter(Boolean);
   const c = customer(j.customerId) || {};
-  return `<button class="act ${a.status === 'done' ? 'done' : ''}" style="--c:${t.color}" draggable="${S.canWrite && !isCrew()}" data-drag-act="${esc(a.id)}" data-act="edit-act" data-id="${esc(a.id)}">
-    <span class="at">${a.status === 'done' ? '✓ ' : ''}${esc(t.name)}<span class="tm">${a.time ? fmtTime(a.time) : esc(a.duration || '')}</span></span>
+  return `<button class="act ${a.status === 'done' ? 'done' : ''} ${a.status === 'estimate' ? 'est' : ''}" style="--c:${t.color}" draggable="${S.canWrite && !isCrew()}" data-drag-act="${esc(a.id)}" data-act="edit-act" data-id="${esc(a.id)}">
+    <span class="at">${a.status === 'done' ? '✓ ' : ''}${esc(t.name)}${a.status === 'estimate' ? '<i class="est-tag">EST</i>' : ''}<span class="tm">${a.time ? fmtTime(a.time) : esc(a.duration || '')}</span></span>
     <span class="an">${esc(j.name || 'Job removed')}</span>
     <span class="am"><span class="mono">${esc(j.number || '')}</span><span>${esc(lastName(c.name))}</span>${j.sqft && a.type === 'install' ? `<span>${sqft1(j.sqft)}ft²</span>` : ''}<span class="avatars" style="margin-left:auto">${crew.map((m) => avatar(m)).join('')}</span></span>
   </button>`;
@@ -48,8 +48,23 @@ VIEWS.calendar = () => {
     body = `<div class="tablewrap"><div class="month" style="min-width:560px">${['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => `<div class="dow">${d}</div>`).join('')}${cells.map((d) => {
       const list = byDate.get(d) || [];
       const out = d.slice(0, 7) !== first.slice(0, 7);
-      return `<div class="mday ${out ? 'out' : ''} ${d === t ? 'today' : ''}" data-act="cal-day" data-date="${d}" data-drop-date="${d}"><span class="n">${parseD(d).getDate()}</span>${list.slice(0, 4).map((a) => { const j = jobOf(a.jobId) || {}; return `<button class="mchip" style="--c:${actType(a.type).color}" data-act="edit-act" data-id="${esc(a.id)}" draggable="${S.canWrite && !isCrew()}" data-drag-act="${esc(a.id)}">${a.status === 'done' ? '✓ ' : ''}${esc(actType(a.type).name[0])} · ${esc(j.name || '')}</button>`; }).join('')}${list.length > 4 ? `<span class="mmore">+${list.length - 4} more</span>` : ''}</div>`;
+      return `<div class="mday ${out ? 'out' : ''} ${d === t ? 'today' : ''}" data-act="cal-day" data-date="${d}" data-drop-date="${d}"><span class="n">${parseD(d).getDate()}</span>${list.slice(0, 4).map((a) => { const j = jobOf(a.jobId) || {}; return `<button class="mchip ${a.status === 'estimate' ? 'est' : ''}" style="--c:${actType(a.type).color}" data-act="edit-act" data-id="${esc(a.id)}" draggable="${S.canWrite && !isCrew()}" data-drag-act="${esc(a.id)}">${a.status === 'done' ? '✓ ' : ''}${esc(actType(a.type).name[0])} · ${esc(j.name || '')}</button>`; }).join('')}${list.length > 4 ? `<span class="mmore">+${list.length - 4} more</span>` : ''}</div>`;
     }).join('')}</div></div>`;
+  } else if (u.calMode === 'crew') {
+    const ws = weekStart(u.calDate);
+    const days = Array.from({ length: 7 }, (_, i) => addDays(ws, i));
+    const a = parseD(days[0]), b = parseD(days[6]);
+    title = a.getMonth() === b.getMonth() ? `${MON[a.getMonth()]} ${a.getDate()} – ${b.getDate()}, ${b.getFullYear()}` : `${MON[a.getMonth()]} ${a.getDate()} – ${MON[b.getMonth()]} ${b.getDate()}, ${b.getFullYear()}`;
+    const weekActs = all.filter((x) => x.date >= days[0] && x.date <= days[6]);
+    const people = team.filter((m) => !['Owner', 'Office', 'Sales'].includes(m.role) || weekActs.some((x) => (x.crew || []).includes(m.id)));
+    const rows = people.map((m) => ({ m, id: m.id, acts: weekActs.filter((x) => (x.crew || []).includes(m.id)) }));
+    const un = weekActs.filter((x) => !(x.crew || []).length);
+    if (un.length) rows.push({ m: null, id: '', acts: un });
+    body = `<div class="tablewrap" data-keep-scroll="crew"><div class="crewcal" style="--days:7">
+      <div class="cc-corner">Crew</div>${days.map((d) => `<div class="cc-dow ${d === t ? 'today' : ''}"><b>${parseD(d).getDate()}</b> ${DOW[parseD(d).getDay()]}</div>`).join('')}
+      ${rows.map((r) => `<div class="cc-who">${r.m ? `${avatar(r.m)}<span><b>${esc(r.m.name)}</b><small>${esc(r.m.role || '')} · ${r.acts.length}</small></span>` : '<span><b>Unassigned</b><small>Needs a crew</small></span>'}</div>${days.map((d) => `<div class="cc-cell ${d === t ? 'today' : ''} ${isWeekend(d) ? 'weekend' : ''}" data-drop-date="${d}" data-drop-member="${esc(r.id)}">${r.acts.filter((x) => x.date === d).sort((x, y) => (x.time || '99').localeCompare(y.time || '99')).map(actBlockHTML).join('')}</div>`).join('')}`).join('')}
+    </div></div>
+    ${rows.length ? '' : '<div class="card"><div class="empty">Add your installers, templaters and fabricators on the Team page to see their week here.</div></div>'}`;
   } else {
     const ws = weekStart(u.calDate);
     const days = Array.from({ length: 7 }, (_, i) => addDays(ws, i));
@@ -59,18 +74,20 @@ VIEWS.calendar = () => {
       const list = byDate.get(d) || [];
       const allDay = Array.from(S.activities.values()).filter((x) => x.date === d);
       return `<section class="day ${d === t ? 'today' : ''} ${isWeekend(d) ? 'weekend' : ''}" data-drop-date="${d}" aria-label="${fmtD(d)}">
-        <div class="day-h"><div class="d"><b>${parseD(d).getDate()}</b><span>${DOW[parseD(d).getDay()]}</span>${S.canWrite && !isCrew() ? `<button class="btn icon sm ghost add" data-act="new-act" data-date="${d}" aria-label="Schedule on ${fmtD(d)}">${icon('plus')}</button>` : ''}</div>${capacityHTML(d, allDay)}</div>
+        <div class="day-h"><div class="d"><b>${parseD(d).getDate()}</b><span>${DOW[parseD(d).getDay()]}</span><button class="btn icon sm ghost add" data-act="print-day" data-date="${d}" aria-label="Print day packet for ${fmtD(d)}" title="Print day packet">${icon('print')}</button>${S.canWrite && !isCrew() ? `<button class="btn icon sm ghost add" style="margin-left:0" data-act="new-act" data-date="${d}" aria-label="Schedule on ${fmtD(d)}">${icon('plus')}</button>` : ''}</div>${capacityHTML(d, allDay)}</div>
         <div class="day-b">${list.map(actBlockHTML).join('')}</div></section>`;
     }).join('')}</div></div>`;
   }
   const head = `<div class="cal-head">
     <div class="btn-row"><button class="btn icon" data-act="cal-move" data-d="-1" aria-label="Previous">${icon('back')}</button><button class="btn" data-act="cal-today">Today</button><button class="btn icon" data-act="cal-move" data-d="1" aria-label="Next">${icon('next')}</button></div>
     <h2>${esc(title)}</h2>
-    <div class="seg" role="group" aria-label="Calendar view">${[['week', 'Week'], ['month', 'Month']].map(([k, l]) => `<button data-act="ui" data-k="calMode" data-v="${k}" aria-pressed="${u.calMode === k}">${l}</button>`).join('')}</div>
+    <div class="seg" role="group" aria-label="Calendar view">${[['week', 'Week'], ['crew', 'By crew'], ['month', 'Month']].map(([k, l]) => `<button data-act="ui" data-k="calMode" data-v="${k}" aria-pressed="${u.calMode === k}">${l}</button>`).join('')}</div>
     <select class="input" id="cal-crew" data-change="calCrew" style="width:auto" aria-label="Crew member"><option value="">All crew</option>${team.map((m) => `<option value="${esc(m.id)}" ${u.calCrew === m.id ? 'selected' : ''}>${esc(m.name)}</option>`).join('')}</select>
-    <div class="btn-row" style="margin-left:auto">${ACT_TYPES.map((tp) => `<button class="chip" data-act="cal-type" data-v="${tp.id}" aria-pressed="${u.calTypes.includes(tp.id)}"><i style="background:${tp.color}"></i>${tp.name}</button>`).join('')}</div>
-  </div>`;
-  return { title: 'Calendar', body: head + body + `<div class="faint" style="font-size:12px">Drag a job to another day to reschedule. Capacity bars use your daily install square footage from Settings.</div>` };
+    <button class="btn" data-act="print-day" data-date="${u.calMode === 'month' ? today() : (u.calDate >= weekStart(u.calDate) && today() >= weekStart(u.calDate) && today() <= addDays(weekStart(u.calDate), 6) ? today() : weekStart(u.calDate))}">${icon('print')}<span class="lbl">Day packet</span></button>
+    <div class="btn-row" style="margin-left:auto">${actTypes().map((tp) => `<button class="chip" data-act="cal-type" data-v="${esc(tp.id)}" aria-pressed="${!u.calHide.includes(tp.id)}"><i style="background:${tp.color}"></i>${esc(tp.name)}</button>`).join('')}</div>
+  </div>
+  <div class="legend faint"><span><i class="lg-solid"></i>Confirmed</span><span><i class="lg-dash"></i>Estimate (penciled in)</span><span>✓ Complete</span></div>`;
+  return { title: 'Calendar', body: head + body + `<div class="faint" style="font-size:12px">${u.calMode === 'crew' ? 'Drag a job to another day, or onto another person’s row to reassign it.' : 'Drag a job to another day to reschedule. Capacity bars use your daily install square footage from Settings.'}</div>` };
 };
 
 /* ---------- My Work ---------- */
@@ -84,15 +101,18 @@ function taskCardHTML(a) {
   const addons = quoteAddonSummary(j.quote);
   const issues = S.mode === 'local' ? notesForJob(j.id).filter((n) => n.kind === 'issue').length : 0;
   return `<article class="task">
-    <div class="task-h" style="--c:${t.color}"><span class="type">${esc(t.name)}</span><span class="mono faint">${a.time ? fmtTime(a.time) : ''}${a.duration ? ' · ' + esc(a.duration) : ''}</span><span style="margin-left:auto" class="avatars">${crew.map((m) => avatar(m)).join('')}</span>${done ? '<span class="tag ok">Done</span>' : ''}</div>
+    <div class="task-h ${a.status === 'estimate' ? 'est' : ''}" style="--c:${t.color}"><span class="type">${esc(t.name)}</span>${a.status === 'estimate' ? '<span class="tag warn">Estimate</span>' : ''}<span class="mono faint">${a.time ? fmtTime(a.time) : ''}${a.duration ? ' · ' + esc(a.duration) : ''}</span><span style="margin-left:auto" class="avatars">${crew.map((m) => avatar(m)).join('')}</span>${done ? '<span class="tag ok">Done</span>' : ''}</div>
     <div class="task-b">
       <div><div class="title">${esc(j.name || 'Job removed')}</div><div class="muted"><span class="mono">${esc(j.number || '')}</span> · ${esc(c.name || '')} ${demoTag(j)}</div></div>
       <dl class="kv">
         ${site ? `<dt>Site</dt><dd><span style="user-select:all">${esc(site)}</span> <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(site)}" target="_blank" rel="noopener">Directions</a></dd>` : ''}
+        ${j.siteContact || j.sitePhone ? `<dt>On site</dt><dd>${esc(j.siteContact || '')} ${j.sitePhone ? `<span class="mono" style="user-select:all">${esc(j.sitePhone)}</span>` : ''}</dd>` : ''}
         ${c.phone ? `<dt>Phone</dt><dd><span class="mono" style="user-select:all">${esc(c.phone)}</span></dd>` : ''}
         ${j.material ? `<dt>Stone</dt><dd><span style="display:inline-flex;gap:6px;align-items:center"><span class="swatch" style="background:${esc(j.materialColor || '#ccc')}"></span>${esc(j.material)}</span>${j.sqft ? ` · ${sqft1(j.sqft)} ft²` : ''}${j.slabs ? ` · ${j.slabs} slab${j.slabs === 1 ? '' : 's'}` : ''}</dd>` : ''}
         ${j.edge ? `<dt>Edge</dt><dd>${esc(j.edge)}</dd>` : ''}
         ${addons ? `<dt>Cutouts</dt><dd>${esc(addons)}</dd>` : ''}
+        ${(() => { const sl = slabsForJob(j.id).filter((s) => s.status === 'allocated'); return sl.length ? `<dt>Slabs</dt><dd>${sl.map((s) => `<span class="mono">${esc(s.serial)}</span>${s.location ? ' (' + esc(s.location) + ')' : ''}`).join(', ')}</dd>` : ''; })()}
+        ${(() => { const fl = filesForJob(j.id); return fl.length ? `<dt>Files</dt><dd><button class="linkbtn" data-act="go" data-view="job" data-id="${esc(j.id)}">${fl.length} file${fl.length === 1 ? '' : 's'}${fl.some(isImageFile) ? ` · ${fl.filter(isImageFile).length} photo${fl.filter(isImageFile).length === 1 ? '' : 's'}` : ''}</button></dd>` : ''; })()}
         ${a.notes ? `<dt>Notes</dt><dd>${esc(a.notes)}</dd>` : ''}
         ${issues ? `<dt>Issues</dt><dd><span class="tag bad">${issues} open</span></dd>` : ''}
       </dl>
@@ -122,6 +142,7 @@ VIEWS.mywork = () => {
   if (!me && !all) return { title: 'My Work', body: who + `<div class="card"><div class="empty">${S.mode === 'db' ? '<b>Your login isn’t linked to a team member.</b><span>Ask the owner to create your login from your card on the Team page.</span>' : '<b>Pick your name to see your jobs.</b><span>Kerf remembers it on this device.</span>'}</div></div>` };
   const section = (label, list, empty) => `<div style="display:flex;flex-direction:column;gap:10px"><h2>${label} <span class="faint num">${list.length || ''}</span></h2>${list.length ? `<div class="tasks">${list.map(taskCardHTML).join('')}</div>` : `<div class="card"><div class="empty">${empty}</div></div>`}</div>`;
   return {
+    actions: `<button class="btn" data-act="print-day" data-date="${t}">${icon('print')}<span class="lbl">Print my day</span></button>`,
     title: all ? 'Shop work' : `${esc(me.name.split(' ')[0])}’s work`,
     crumb: esc(fmtD(t)),
     body: who
@@ -136,27 +157,27 @@ VIEWS.mywork = () => {
 VIEWS.customers = () => {
   const q = S.ui.custQ.toLowerCase();
   const jobs = allJobs();
-  const list = Array.from(S.customers.values()).filter((c) => !q || [c.name, c.phone, c.email, c.address, c.type].join(' ').toLowerCase().includes(q)).map((c) => {
+  const list = Array.from(S.customers.values()).filter((c) => !q || [c.name, c.phone, c.email, c.address, c.type, ...(c.contacts || []).map((x) => [x.name, x.phone, x.email].join(' '))].join(' ').toLowerCase().includes(q)).map((c) => {
     const cj = jobs.filter((j) => j.customerId === c.id);
     return { c, n: cj.length, rev: sum(cj.filter((j) => stageIdx(j.stage) >= stageIdx('sold')), (j) => j.total), last: Math.max(0, ...cj.map((j) => j.updatedAt || 0)) };
   }).sort((a, b) => b.last - a.last || String(a.c.name).localeCompare(String(b.c.name)));
   return {
-    title: 'Customers',
-    actions: S.canWrite ? `<button class="btn" data-act="edit-cust">${icon('plus')}<span class="lbl">Customer</span></button>` : '',
-    body: `<div class="toolbar"><input class="input search" id="cust-q" type="search" placeholder="Search name, phone, email, address" value="${esc(S.ui.custQ)}" data-input="custQ" aria-label="Search customers"><span class="faint">${list.length} customer${list.length === 1 ? '' : 's'}</span></div>
+    title: 'Accounts',
+    actions: S.canWrite ? `<button class="btn" data-act="edit-cust">${icon('plus')}<span class="lbl">New account</span></button>` : '',
+    body: `<div class="toolbar"><input class="input search" id="cust-q" type="search" placeholder="Search accounts, contacts, phone, email" value="${esc(S.ui.custQ)}" data-input="custQ" aria-label="Search accounts"><span class="faint">${list.length} account${list.length === 1 ? '' : 's'}</span></div>
     <div class="card"><div class="tablewrap"><table class="t"><thead><tr><th>Name</th><th>Type</th><th>Phone</th><th>Email</th><th class="r">Jobs</th><th class="r">Sold</th><th>Last activity</th></tr></thead><tbody>
-      ${list.map(({ c, n, rev, last }) => `<tr class="click" data-act="go" data-view="customer" data-id="${esc(c.id)}"><td><b>${esc(c.name)}</b> ${demoTag(c)}</td><td>${esc(c.type || '')}</td><td class="mono">${esc(c.phone || '')}</td><td class="faint">${esc(c.email || '')}</td><td class="r">${n}</td><td class="r">${rev ? money(rev) : '—'}</td><td class="faint">${last ? ago(last) : '—'}</td></tr>`).join('') || `<tr><td colspan="7"><div class="empty">${q ? 'No customers match.' : 'Customers are added when you write a quote.'}</div></td></tr>`}
+      ${list.map(({ c, n, rev, last }) => `<tr class="click" data-act="go" data-view="customer" data-id="${esc(c.id)}"><td><b>${esc(c.name)}</b> ${demoTag(c)}</td><td>${esc(c.type || '')}</td><td class="mono">${esc(c.phone || '')}</td><td class="faint">${esc(c.email || '')}</td><td class="r">${n}</td><td class="r">${rev ? money(rev) : '—'}</td><td class="faint">${last ? ago(last) : '—'}</td></tr>`).join('') || `<tr><td colspan="7"><div class="empty">${q ? 'No accounts match.' : 'Accounts are builders, dealers or homeowners. They’re added when you write a quote.'}</div></td></tr>`}
     </tbody></table></div></div>`,
   };
 };
 VIEWS.customer = ({ id }) => {
   const c = customer(id);
-  if (!c) return { title: 'Customer not found', back: { view: 'customers' }, body: `<div class="card"><div class="empty"><b>This customer was removed.</b></div></div>` };
+  if (!c) return { title: 'Account not found', back: { view: 'customers' }, body: `<div class="card"><div class="empty"><b>This account was removed.</b></div></div>` };
   const jobs = allJobs().filter((j) => j.customerId === c.id).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
   const sold = sum(jobs.filter((j) => stageIdx(j.stage) >= stageIdx('sold')), (j) => j.total);
   const owed = sum(jobs.filter((j) => stageIdx(j.stage) >= stageIdx('sold')), balanceOf);
   return {
-    back: { view: 'customers' }, crumb: esc(c.type || 'Customer'), title: esc(c.name),
+    back: { view: 'customers' }, crumb: esc((c.type || 'Account') + ' account'), title: esc(c.name),
     actions: S.canWrite ? `<button class="btn" data-act="edit-cust" data-id="${esc(c.id)}">${icon('edit')}<span class="lbl">Edit</span></button><button class="btn dark" data-act="new-job" data-cust="${esc(c.id)}">${icon('plus')}<span class="lbl">Quote for ${esc(c.name.split(' ')[0])}</span></button>` : '',
     body: `<div class="cols"><div class="card"><div class="card-h"><h2>Jobs</h2><span class="faint">${jobs.length}</span></div><div class="rows">${jobs.map((j) => `<button class="row" data-act="go" data-view="job" data-id="${esc(j.id)}"><span class="stripe" style="--c:${stageColor(j.stage)}"></span><span class="grow"><span class="t1">${esc(j.name)}</span><span class="t2"><span class="mono">${esc(j.number)}</span>${j.material ? ' · ' + esc(j.material) : ''}</span></span>${stagePill(j.stage)}<span class="right num" style="min-width:80px"><b>${j.total ? money(j.total) : '—'}</b></span></button>`).join('') || '<div class="empty">No jobs yet.</div>'}</div></div>
     <div class="stack"><div class="card"><div class="card-b" style="display:flex;flex-direction:column;gap:10px">
@@ -165,6 +186,7 @@ VIEWS.customer = ({ id }) => {
       ${c.address ? `<div><div class="eyebrow">Address</div>${esc(c.address)} <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.address)}" target="_blank" rel="noopener">Map</a></div>` : ''}
       ${c.notes ? `<div><div class="eyebrow">Notes</div><div style="white-space:pre-wrap">${esc(c.notes)}</div></div>` : ''}
     </div></div>
+    ${(c.contacts || []).length ? `<div class="card"><div class="card-h"><h2>Contacts</h2><span class="faint">${c.contacts.length}</span></div><div class="card-b contacts">${c.contacts.map(contactLine).join('')}</div></div>` : ''}
     <div class="kpis" style="grid-template-columns:1fr 1fr"><div class="kpi"><span class="label">Sold</span><span class="value">${money(sold)}</span></div><div class="kpi"><span class="label">Balance owed</span><span class="value">${money(owed)}</span></div></div></div></div>`,
   };
 };
@@ -203,7 +225,7 @@ VIEWS.team = () => {
     body: `<p class="muted" style="margin:0;max-width:70ch">${S.mode === 'db' ? 'Everyone who sells, templates, cuts or installs. Send your shop code so people can ask to join, or click <b>Create login</b> on someone’s card to set them up yourself. Crew see their own schedule and can mark work done; they don’t see prices or money.' : 'Everyone who sells, templates, cuts or installs. In demo mode, pick a name under <b>Working as</b> to see that person’s My Work view.'}</p>
     ${teamAccessHTML()}
     ${all.length ? `<div class="tasks">${all.map((m) => { const l = load(m.id); return `<article class="task" style="${m.active === false ? 'opacity:.6' : ''}"><div class="task-b" style="flex-direction:row;align-items:center;gap:12px">${avatar(m, 'lg')}<div style="flex:1;min-width:0"><div class="title" style="font-size:15px">${esc(m.name)} ${demoTag(m)}</div><div class="muted">${esc(m.role || '')}${m.phone ? ' · <span class="mono">' + esc(m.phone) + '</span>' : ''}${m.active === false ? ' · inactive' : ''}</div></div>${S.canWrite && isAdmin() ? `<button class="btn sm" data-act="edit-member" data-id="${esc(m.id)}">${icon('edit')}Edit</button>` : ''}</div>${loginRowHTML(m)}
-      <div class="task-f" style="font-size:12.5px;color:var(--ink-2)">This week: ${l.length ? ACT_TYPES.map((tp) => { const n = l.filter((a) => a.type === tp.id).length; return n ? `<span><b>${n}</b> ${tp.name.toLowerCase()}${n > 1 && tp.id !== 'fabrication' ? 's' : ''}</span>` : ''; }).filter(Boolean).join(' · ') : 'nothing scheduled'}</div></article>`; }).join('')}</div>`
+      <div class="task-f" style="font-size:12.5px;color:var(--ink-2)">This week: ${l.length ? actTypes().map((tp) => { const n = l.filter((a) => a.type === tp.id).length; return n ? `<span><b>${n}</b> ${tp.name.toLowerCase()}${n > 1 && tp.id !== 'fabrication' ? 's' : ''}</span>` : ''; }).filter(Boolean).join(' · ') : 'nothing scheduled'}</div></article>`; }).join('')}</div>`
       : `<div class="card"><div class="empty"><b>No team yet.</b><span>Add the people who quote, template, fabricate and install.</span>${S.canWrite && isAdmin() ? '<button class="btn primary" data-act="edit-member">Add first team member</button>' : ''}</div></div>`}`,
   };
 };
@@ -237,6 +259,11 @@ VIEWS.settings = () => {
       <div class="stack">
         <div class="card"><div class="card-h"><h2>Your shop</h2><span class="faint">Prints on quotes</span></div><div class="card-b" style="display:flex;flex-direction:column;gap:12px"><div class="field"><span>Logo</span><div class="logo-row">${safeImg(s.logo) ? `<img class="gs-logo" src="${safeImg(s.logo)}" alt="Shop logo">` : '<span class="logo-empty">No logo</span>'}${W ? `<label class="btn sm">Upload<input type="file" accept="image/*" class="sr" data-upload="logo"></label>${safeImg(s.logo) ? '<button class="btn sm ghost" data-act="logo-remove">Remove</button>' : ''}` : ''}</div><small>PNG with a clear background looks best. It shows in the menu and on quotes.</small></div>${f('shopName', 'Shop name')}${f('shopPhone', 'Phone')}${f('shopEmail', 'Email')}${f('shopAddress', 'Address')}</div></div>
         <div class="card"><div class="card-h"><h2>Quote defaults</h2></div><div class="card-b grid2">${f('taxRate', 'Sales tax %', 'num', '', 'mono right')}${f('depositPct', 'Deposit %', 'num', '', 'mono right')}${f('minCharge', 'Minimum job $', 'num', 'Small jobs are rounded up to this', 'mono right')}${f('tearOutPerSqft', 'Tear-out $ / sq ft', 'num', '', 'mono right')}${f('quoteValidDays', 'Quotes good for (days)', 'num', '', 'mono right')}</div></div>
+        <div class="card"><div class="card-h"><h2>Activity types</h2><span class="faint">Shown on the calendar</span></div><div class="card-b" style="display:flex;flex-direction:column;gap:10px">
+          <div class="btn-row">${BASE_ACT_TYPES.map((t) => `<span class="chip"><i style="background:${t.color}"></i>${t.name}</span>`).join('')}</div>
+          <div class="ptable">${(s.activityTypes || []).map((t, i) => `<div class="prow e" style="grid-template-columns:30px minmax(120px,1fr) 34px"><input type="color" class="input" id="sat-c-${i}" value="${esc(isHex(t.color) ? t.color : '#68716D')}" data-sl="activityTypes" data-i="${i}" data-f="color" aria-label="Color" ${dis}><input class="input" id="sat-n-${i}" value="${esc(t.name || '')}" placeholder="Saw, CNC, Polish, Delivery, Invoice…" data-sl="activityTypes" data-i="${i}" data-f="name" aria-label="Activity type name" ${dis}><button class="btn icon ghost" data-act="s-del" data-l="activityTypes" data-i="${i}" aria-label="Remove" ${dis}>${icon('trash')}</button></div>`).join('')}
+          ${W ? `<div><button class="btn sm" data-act="s-add" data-l="activityTypes">${icon('plus')}Add activity type</button></div>` : ''}</div>
+          <small class="faint">Add your own steps, like Saw, CNC, Polish or Delivery. The five standard types can’t be removed.</small></div></div>
         <div class="card"><div class="card-h"><h2>Slabs & capacity</h2></div><div class="card-b grid2">${f('slabL', 'Slab length (in)', 'num', 'Standard 126, jumbo 130', 'mono right')}${f('slabW', 'Slab width (in)', 'num', 'Standard 63, jumbo 65–79', 'mono right')}${f('capInstallSqft', 'Install sq ft per day', 'num', 'Fills the calendar capacity bar', 'mono right')}${f('capTemplates', 'Templates per day', 'num', '', 'mono right')}</div></div>
         <div class="card"><div class="card-h"><h2>Data</h2></div><div class="card-b" style="display:flex;flex-direction:column;gap:10px">
           <div class="muted" style="font-size:13px">${S.mode === 'db' ? 'Your shop data is saved in your Supabase database and shared live with everyone who has a login.' : 'Demo mode: data lives in this browser only.'}</div>

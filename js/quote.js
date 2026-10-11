@@ -9,7 +9,7 @@ function newPiece(label = '', L = 0, D = 25.5, kind = 'top', edges) {
 }
 function newArea(name = 'Kitchen', c = cfg()) {
   const mat = c.materials.find((m) => /quartz/i.test(m.group)) || c.materials[0];
-  const base = { id: uid(), name, mat: matSnap(mat), edge: edgeSnap(c.edges[0]), tearOut: false, tearPrice: Number(c.tearOutPerSqft) || 0, addons: [], pieces: [] };
+  const base = { id: uid(), name, mat: matSnap(mat), edge: edgeSnap(c.edges[0]), thick: /porcelain/i.test((mat && mat.group) || '') ? '1.2cm' : '3cm', tearOut: false, tearPrice: Number(c.tearOutPerSqft) || 0, addons: [], pieces: [] };
   if (/island/i.test(name)) base.pieces.push(newPiece('Island', 0, 42, 'top', { f: true, b: true, l: true, r: true }));
   else if (/vanity/i.test(name)) base.pieces.push(newPiece('Vanity top', 0, 22.5, 'top', { f: true, b: false, l: false, r: false }));
   else if (/bar/i.test(name)) base.pieces.push(newPiece('Bar top', 0, 14, 'top', { f: true, b: true, l: false, r: false }));
@@ -233,7 +233,7 @@ function quoteDocHTML(job, cust, q, calc, c = cfg(), standalone = true) {
     const ac = calc.areas[i];
     let rows = '';
     const pieceList = (a.pieces || []).filter((p) => p.L && p.D).map((p) => `${esc(p.label || 'Piece')} ${fmtIn(p.L)} × ${fmtIn(p.D)}`).join(' · ');
-    rows += row(`<b>${esc(a.mat ? a.mat.name : 'Material')}</b> — fabricated & installed`, sqft1(ac.sqft) + ' sq ft', money2(a.mat ? a.mat.price : 0), money2(ac.matCost), pieceList);
+    rows += row(`<b>${esc(a.mat ? a.mat.name : 'Material')}</b>${a.thick ? ' ' + esc(a.thick) : ''} — fabricated & installed`, sqft1(ac.sqft) + ' sq ft', money2(a.mat ? a.mat.price : 0), money2(ac.matCost), pieceList);
     if (ac.edgeLf > 0) rows += row(`Edge profile: ${esc(a.edge ? a.edge.name : '')}`, ac.edgeLf.toFixed(1) + ' LF', a.edge && a.edge.price ? money2(a.edge.price) : 'Included', ac.edgeCost ? money2(ac.edgeCost) : '—');
     for (const x of a.addons || []) if (x.count) rows += row(esc(x.name), String(x.count), x.price ? money2(x.price) : 'Included', x.price ? money2(x.price * x.count) : '—');
     if (a.tearOut) rows += row('Remove & dispose of existing tops', sqft1(ac.sqft) + ' sq ft', money2(a.tearPrice), money2(ac.tearCost));

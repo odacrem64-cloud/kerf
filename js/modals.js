@@ -44,6 +44,8 @@ function newJobModal(custId = '') {
         <label class="field span2"><span>Job site address</span><input class="input" id="nj-addr" placeholder="Leave blank to use the customer’s address" autocomplete="off"></label>
         <label class="field"><span>Salesperson</span><select class="input" id="nj-sales">${teamOptions(me ? me.id : '')}</select></label>
         <label class="field"><span>Lead source</span><select class="input" id="nj-src">${opts(SOURCES, 'Referral')}</select></label>
+        <label class="field"><span>On-site contact <span class="faint">(optional)</span></span><input class="input" id="nj-sc" placeholder="Name — super, homeowner"></label>
+        <label class="field"><span>Their phone</span><input class="input" id="nj-sp" inputmode="tel"></label>
         <label class="field span2"><span>PO / lot number <span class="faint">(optional)</span></span><input class="input" id="nj-po" placeholder="Lot 17 · PO 44812"></label>
       </div>`,
     foot: `<button class="btn" data-act="close-modal">Cancel</button><button class="btn primary" data-act="nj-create">Create & build quote</button>`,
@@ -51,13 +53,13 @@ function newJobModal(custId = '') {
 }
 function njCustHTML() {
   const c = MS.custId ? customer(MS.custId) : null;
-  if (c) return `<div class="field"><span>Customer</span><div style="display:flex;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line-2);border-radius:var(--r-sm)"><b style="flex:1">${esc(c.name)}</b><span class="mono faint">${esc(c.phone || '')}</span><button class="btn sm ghost" data-act="nj-change">Change</button></div></div>`;
-  const seg = S.customers.size ? `<div class="seg">${[['existing', 'Existing customer'], ['new', 'New customer']].map(([k, l]) => `<button type="button" data-act="nj-mode" data-v="${k}" aria-pressed="${MS.mode === k}">${l}</button>`).join('')}</div>` : '';
+  if (c) return `<div class="field"><span>Account</span><div style="display:flex;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line-2);border-radius:var(--r-sm)"><b style="flex:1">${esc(c.name)}</b><span class="mono faint">${esc(c.phone || '')}</span><button class="btn sm ghost" data-act="nj-change">Change</button></div></div>`;
+  const seg = S.customers.size ? `<div class="seg">${[['existing', 'Existing account'], ['new', 'New account']].map(([k, l]) => `<button type="button" data-act="nj-mode" data-v="${k}" aria-pressed="${MS.mode === k}">${l}</button>`).join('')}</div>` : '';
   if (MS.mode === 'existing') {
     return `<div class="field">${seg}<div class="picker" style="margin-top:8px"><input class="input" id="nj-q" placeholder="Search by name or phone" autocomplete="off" data-input-modal="njq" value="${esc(MS.q)}"><div class="menu" id="nj-menu">${njMenuHTML()}</div></div></div>`;
   }
   return `<div class="field">${seg}</div><div class="grid2">
-    <label class="field span2"><span>Customer name</span><input class="input" id="nj-c-name" placeholder="Full name or company" autocomplete="off"></label>
+    <label class="field span2"><span>Account name</span><input class="input" id="nj-c-name" placeholder="Homeowner name, builder or dealer" autocomplete="off"></label>
     <label class="field"><span>Phone</span><input class="input" id="nj-c-phone" inputmode="tel" autocomplete="off"></label>
     <label class="field"><span>Email</span><input class="input" id="nj-c-email" inputmode="email" autocomplete="off"></label>
     <label class="field"><span>Type</span><select class="input" id="nj-c-type">${opts(CUST_TYPES, 'Homeowner')}</select></label>
@@ -67,15 +69,15 @@ function njMenuHTML() {
   const q = MS.q.toLowerCase();
   const list = Array.from(S.customers.values()).filter((c) => !q || [c.name, c.phone, c.email].join(' ').toLowerCase().includes(q)).slice(0, 8);
   return list.map((c) => `<button type="button" data-act="nj-pick" data-id="${esc(c.id)}"><b style="flex:1">${esc(c.name)}</b><span class="faint mono">${esc(c.phone || '')}</span></button>`).join('')
-    + `<button type="button" data-act="nj-mode" data-v="new" style="color:var(--accent-text);font-weight:600">${icon('plus', 'style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2"')} New customer${MS.q ? ` “${esc(MS.q)}”` : ''}</button>`;
+    + `<button type="button" data-act="nj-mode" data-v="new" style="color:var(--accent-text);font-weight:600">${icon('plus', 'style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2"')} New account${MS.q ? ` “${esc(MS.q)}”` : ''}</button>`;
 }
 async function njCreate() {
   let custId = MS.custId;
   let cust = custId ? customer(custId) : null;
   if (!custId) {
-    if (MS.mode === 'existing') { fieldErr('#nj-q', 'Pick a customer or add a new one'); return; }
+    if (MS.mode === 'existing') { fieldErr('#nj-q', 'Pick an account or add a new one'); return; }
     const name = val('#nj-c-name');
-    if (!name) { fieldErr('#nj-c-name', 'Enter the customer’s name'); return; }
+    if (!name) { fieldErr('#nj-c-name', 'Enter the account name'); return; }
     custId = uid();
     cust = { name, phone: val('#nj-c-phone'), email: val('#nj-c-email'), type: val('#nj-c-type'), address: val('#nj-c-addr'), notes: '', createdAt: Date.now() };
     await put('customers', custId, cust);
@@ -83,7 +85,7 @@ async function njCreate() {
   const jid = uid();
   const job = {
     number: nextJobNumber(), name: val('#nj-name') || 'Kitchen', customerId: custId, address: val('#nj-addr') || (cust && cust.address) || '',
-    stage: 'lead', salesId: val('#nj-sales'), source: val('#nj-src'), po: val('#nj-po'), createdAt: Date.now(), updatedAt: Date.now(),
+    stage: 'lead', salesId: val('#nj-sales'), source: val('#nj-src'), po: val('#nj-po'), siteContact: val('#nj-sc'), sitePhone: val('#nj-sp'), createdAt: Date.now(), updatedAt: Date.now(),
     quote: null, total: 0, sqft: 0, checklist: {}, payments: [],
   };
   await put('jobs', jid, job);
@@ -102,10 +104,12 @@ function editJobModal(id) {
     title: `Edit ${j.number}`,
     body: `<div class="grid2">
       <label class="field span2"><span>Job name</span><input class="input" id="ej-name" value="${esc(j.name)}"></label>
-      <label class="field span2"><span>Customer</span><select class="input" id="ej-cust">${custs.map((c) => `<option value="${esc(c.id)}" ${c.id === j.customerId ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select></label>
+      <label class="field span2"><span>Account</span><select class="input" id="ej-cust">${custs.map((c) => `<option value="${esc(c.id)}" ${c.id === j.customerId ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select></label>
       <label class="field span2"><span>Job site address</span><input class="input" id="ej-addr" value="${esc(j.address || '')}"></label>
       <label class="field"><span>Salesperson</span><select class="input" id="ej-sales">${teamOptions(j.salesId)}</select></label>
       <label class="field"><span>Lead source</span><select class="input" id="ej-src">${opts(SOURCES, j.source)}</select></label>
+      <label class="field"><span>On-site contact</span><input class="input" id="ej-sc" value="${esc(j.siteContact || '')}"></label>
+      <label class="field"><span>Their phone</span><input class="input" id="ej-sp" inputmode="tel" value="${esc(j.sitePhone || '')}"></label>
       <label class="field span2"><span>PO / lot number</span><input class="input" id="ej-po" value="${esc(j.po || '')}"></label></div>`,
     foot: `<button class="btn danger left" data-act="ej-delete">${icon('trash')}Delete job</button><button class="btn" data-act="close-modal">Cancel</button><button class="btn primary" data-act="ej-save">Save</button>`,
   });
@@ -116,7 +120,7 @@ function activityModal({ id, jobId, type, date }) {
   const a = id ? S.activities.get(id) : null;
   if (!a && !guardWrite()) return;
   const W = S.canWrite && !isCrew();
-  MS = { kind: 'act', id: a ? a.id : null, jobId: a ? a.jobId : jobId || '', type: a ? a.type : type || 'template', crew: a ? (a.crew || []).slice() : [], status: a ? a.status : 'scheduled', jq: '' };
+  MS = { kind: 'act', id: a ? a.id : null, jobId: a ? a.jobId : jobId || '', type: a ? a.type : type || 'template', crew: a ? (a.crew || []).slice() : [], status: a ? a.status || 'scheduled' : 'estimate', jq: '' };
   if (!a && !MS.crew.length) {
     const role = { template: 'Templater', fabrication: 'Fabricator', install: 'Installer' }[MS.type];
     if (role) MS.crew = activeTeam().filter((m) => m.role === role).map((m) => m.id).slice(0, MS.type === 'install' ? 2 : 1);
@@ -125,7 +129,8 @@ function activityModal({ id, jobId, type, date }) {
   openModal({
     title: a ? `${actType(a.type).name} · ${j ? j.number : ''}` : 'Schedule',
     body: `<div id="act-job">${actJobHTML()}</div>
-      <div class="field"><span>Type</span><div class="seg" id="act-types" style="flex-wrap:wrap">${ACT_TYPES.map((t) => `<button type="button" data-act="act-type" data-v="${t.id}" aria-pressed="${MS.type === t.id}" ${W ? '' : 'disabled'}>${t.name}</button>`).join('')}</div></div>
+      <div class="field"><span>Type</span><div class="seg" id="act-types" style="flex-wrap:wrap">${actTypes().map((t) => `<button type="button" data-act="act-type" data-v="${esc(t.id)}" aria-pressed="${MS.type === t.id}" ${W ? '' : 'disabled'}>${esc(t.name)}</button>`).join('')}</div></div>
+      <div class="field"><span>Status</span><div class="seg" id="act-status">${ACT_STATUS.map((st) => `<button type="button" data-act="act-status" data-v="${st.id}" aria-pressed="${MS.status === st.id}" ${W ? '' : 'disabled'}>${st.name}</button>`).join('')}</div><small>Estimate = penciled in. Confirmed = date agreed with the customer.</small></div>
       <div class="grid3">
         <label class="field"><span>Date</span><input class="input" type="date" id="act-date" value="${esc(a ? a.date : date || bizDay(1))}" ${W ? '' : 'disabled'}></label>
         <label class="field"><span>Time <span class="faint">(optional)</span></span><input class="input" type="time" id="act-time" value="${esc(a ? a.time || '' : '')}" ${W ? '' : 'disabled'}></label>
@@ -133,7 +138,7 @@ function activityModal({ id, jobId, type, date }) {
       </div>
       <div class="field"><span>Crew</span><div class="crewpick" id="act-crew">${actCrewHTML()}</div></div>
       <label class="field"><span>Notes for the crew</span><textarea class="input" id="act-notes" placeholder="Gate code, parking, bring the 10' straightedge…" ${W ? '' : 'disabled'}>${esc(a ? a.notes || '' : '')}</textarea></label>
-      ${a ? `<label class="check"><input type="checkbox" id="act-done" ${a.status === 'done' ? 'checked' : ''} ${W ? '' : 'disabled'}> Done</label>` : ''}`,
+      `,
     foot: `${a && W ? `<button class="btn danger left" data-act="act-delete">${icon('trash')}Delete</button>` : ''}${j ? `<button class="btn ${a && W ? '' : 'left'}" data-act="go" data-view="job" data-id="${esc(j.id)}">Open job</button>` : ''}<button class="btn" data-act="close-modal">${W ? 'Cancel' : 'Close'}</button>${W ? `<button class="btn primary" data-act="act-save">${a ? 'Save' : 'Schedule'}</button>` : ''}${!W && a && S.canWrite ? (a.status === 'done' ? `<button class="btn" data-act="act-done" data-id="${esc(a.id)}" data-v="0">${icon('undo')}Undo done</button>` : `<button class="btn primary" data-act="act-done" data-id="${esc(a.id)}" data-v="1">${icon('check')}Mark done</button>`) : ''}`,
   });
 }
@@ -155,9 +160,10 @@ async function actSave() {
   if (!date) { fieldErr('#act-date', 'Pick a date'); return; }
   const j = jobOf(MS.jobId);
   const data = { jobId: MS.jobId, type: MS.type, date, time: val('#act-time'), duration: val('#act-dur'), crew: MS.crew, notes: val('#act-notes') };
-  const doneBox = $('#act-done');
-  const wasDone = MS.status === 'done';
-  const nowDone = doneBox ? doneBox.checked : false;
+  const prevStatus = MS.id ? (S.activities.get(MS.id) || {}).status || 'scheduled' : null;
+  const wasDone = prevStatus === 'done';
+  const nowDone = MS.status === 'done';
+  if (!nowDone) data.status = MS.status;
   const crewNames = MS.crew.map(member).filter(Boolean).map((m) => m.name.split(' ')[0]).join(', ');
   if (MS.id) {
     const prev = S.activities.get(MS.id) || {};
@@ -168,13 +174,15 @@ async function actSave() {
     if (nowDone !== wasDone) await completeAct({ ...prev, ...data, id }, nowDone); else toast('Saved');
   } else {
     const id = uid();
-    await put('activities', id, { ...data, status: 'scheduled', createdAt: Date.now() });
+    const st = MS.status;
+    await put('activities', id, { ...data, status: st === 'done' ? 'scheduled' : st, createdAt: Date.now() });
     if (j) {
       await patch('jobs', j.id, { updatedAt: Date.now() });
       await addNote(j.id, `${actType(MS.type).name} scheduled for ${fmtD(date)}${data.time ? ' at ' + fmtTime(data.time) : ''}${crewNames ? ' · ' + crewNames : ''}`, 'event');
     }
     closeModal();
-    toast(`${actType(data.type).name} scheduled for ${fmtD(date)}`);
+    if (st === 'done') await completeAct({ ...data, id }, true);
+    toast(`${actType(data.type).name} ${data.status === 'estimate' ? 'penciled in' : 'scheduled'} for ${fmtD(date)}`);
   }
 }
 
@@ -202,19 +210,30 @@ function paymentModal(id) {
 function customerModal(id) {
   if (!guardWrite()) return;
   const c = id ? customer(id) : null;
-  MS = { kind: 'cust', id: c ? c.id : null };
+  MS = { kind: 'cust', id: c ? c.id : null, contacts: deepClone((c && c.contacts) || []) };
   openModal({
-    title: c ? 'Edit customer' : 'New customer',
+    title: c ? 'Edit account' : 'New account',
     body: `<div class="grid2">
       <label class="field span2"><span>Name</span><input class="input" id="cu-name" value="${esc(c ? c.name : '')}" placeholder="Full name or company"></label>
       <label class="field"><span>Phone</span><input class="input" id="cu-phone" inputmode="tel" value="${esc(c ? c.phone || '' : '')}"></label>
       <label class="field"><span>Email</span><input class="input" id="cu-email" inputmode="email" value="${esc(c ? c.email || '' : '')}"></label>
       <label class="field"><span>Type</span><select class="input" id="cu-type">${opts(CUST_TYPES, c ? c.type : 'Homeowner')}</select></label>
       <label class="field"><span>Address</span><input class="input" id="cu-addr" value="${esc(c ? c.address || '' : '')}"></label>
-      <label class="field span2"><span>Notes</span><textarea class="input" id="cu-notes" placeholder="Gate code, preferred contact time, builder super…">${esc(c ? c.notes || '' : '')}</textarea></label></div>`,
+      <label class="field span2"><span>Notes</span><textarea class="input" id="cu-notes" placeholder="Gate code, preferred contact time, builder super…">${esc(c ? c.notes || '' : '')}</textarea></label></div>
+      <div class="field"><span>Contacts <span class="faint">(supers, designers, project managers)</span></span><div id="cu-contacts" class="contacts-edit">${contactsEditHTML()}</div><div><button type="button" class="btn sm" data-act="contact-add">${icon('plus')}Add contact</button></div></div>`,
     foot: `${c && !allJobs().some((j) => j.customerId === c.id) ? `<button class="btn danger left" data-act="cu-delete">${icon('trash')}Delete</button>` : ''}<button class="btn" data-act="close-modal">Cancel</button><button class="btn primary" data-act="cu-save">Save</button>`,
   });
 }
+
+function contactsEditHTML() {
+  return MS.contacts.map((ct, i) => `<div class="contact-row">
+    <input class="input" id="ct-n-${i}" value="${esc(ct.name || '')}" placeholder="Name" data-ct="${i}" data-f="name" aria-label="Contact name">
+    <input class="input" id="ct-r-${i}" value="${esc(ct.role || '')}" placeholder="Role (Super, Designer…)" data-ct="${i}" data-f="role" aria-label="Role">
+    <input class="input" id="ct-p-${i}" value="${esc(ct.phone || '')}" placeholder="Phone" inputmode="tel" data-ct="${i}" data-f="phone" aria-label="Phone">
+    <input class="input" id="ct-e-${i}" value="${esc(ct.email || '')}" placeholder="Email" inputmode="email" data-ct="${i}" data-f="email" aria-label="Email">
+    <button type="button" class="btn icon ghost" data-act="contact-del" data-i="${i}" aria-label="Remove contact">${icon('close')}</button></div>`).join('') || '<span class="faint" style="font-size:12.5px">No contacts yet.</span>';
+}
+const contactLine = (ct) => `<div class="contact"><div><b>${esc(ct.name || '')}</b>${ct.role ? ` <span class="tag">${esc(ct.role)}</span>` : ''}</div>${ct.phone ? `<div><span class="mono" style="user-select:all">${esc(ct.phone)}</span> <button class="btn sm ghost" data-act="copy" data-text="${esc(ct.phone)}">${icon('copy')}Copy</button></div>` : ''}${ct.email ? `<div class="muted" style="user-select:all;overflow-wrap:anywhere;font-size:12.5px">${esc(ct.email)}</div>` : ''}</div>`;
 
 /* ---------- Team member ---------- */
 function profileModal() {
@@ -302,7 +321,7 @@ function paletteResults() {
 function moreSheet() {
   openModal({
     title: 'More',
-    body: `<div class="rows" style="margin:-6px -18px">${(isCrew() ? [] : [['customers', 'Customers', 'users'], ['team', 'Team', 'team'], ['settings', 'Prices & Settings', 'tag']]).map(([v, n, ic]) => `<button class="row" data-act="go" data-view="${v}" style="font-weight:600;gap:12px">${icon(ic, 'style="width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8"')}${n}</button>`).join('')}</div>
+    body: `<div class="rows" style="margin:-6px -18px">${(isCrew() ? [] : [['customers', 'Accounts', 'users'], ['inventory', 'Inventory', 'slab'], ['team', 'Team', 'team'], ['settings', 'Prices & Settings', 'tag']]).map(([v, n, ic]) => `<button class="row" data-act="go" data-view="${v}" style="font-weight:600;gap:12px">${icon(ic, 'style="width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8"')}${n}</button>`).join('')}</div>
       ${S.mode === 'db' ? `<div style="display:flex;align-items:center;gap:10px">${member(S.me) ? avatar(member(S.me), 'lg') : ''}<div style="flex:1;min-width:0"><b>${esc(member(S.me) ? member(S.me).name : (S.auth.user && S.auth.user.email) || '')}</b><div class="faint" style="font-size:12.5px">${esc(ACCESS_LABEL[access()] || '')} · ${S.live ? 'Live' : 'Reconnecting…'}</div></div><button class="btn" data-act="sign-out">Sign out</button></div>`
         : `<label class="field"><span>Working as</span><select class="input" id="more-me" data-change="me">${teamOptions(S.me, 'Choose your name')}</select></label><div class="faint" style="font-size:12px">Demo · this device only</div>`}`,
   });
