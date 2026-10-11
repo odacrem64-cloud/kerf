@@ -117,13 +117,7 @@ function packShelves(items, W, H, gap) {
 
 /* ---------- SVG: stone fill pattern ---------- */
 function stonePattern(pid, color) {
-  const dark = isDark(color);
-  const v = dark ? 'rgba(255,255,255,.16)' : 'rgba(40,40,40,.13)';
-  const v2 = dark ? 'rgba(255,255,255,.08)' : 'rgba(40,40,40,.07)';
-  return `<pattern id="${pid}" width="160" height="120" patternUnits="userSpaceOnUse"><rect width="160" height="120" fill="${esc(color)}"/>`
-    + `<path d="M-10 92 C 30 70, 52 104, 92 60 S 150 30, 172 44" stroke="${v}" stroke-width="1.4" fill="none"/>`
-    + `<path d="M-10 30 C 20 40, 60 10, 110 28 S 150 70, 172 64" stroke="${v2}" stroke-width="1" fill="none"/>`
-    + `<path d="M40 130 C 60 100, 80 110, 100 84" stroke="${v2}" stroke-width=".8" fill="none"/></pattern>`;
+  return `<pattern id="${pid}" width="10" height="10" patternUnits="userSpaceOnUse"><rect width="10" height="10" fill="${esc(color)}"/></pattern>`;
 }
 
 /* palette: ui → css vars; doc → literal colors (for the downloadable quote) */
@@ -150,7 +144,7 @@ function areaSVG(area, pal = PAL_UI, maxW = 640, idp = 'st-') {
   const pid = idp + area.id;
   const color = (area.mat && area.mat.color) || '#ddd';
   let out = `<svg viewBox="0 0 ${maxW} ${Math.round(H)}" role="img" aria-label="${esc(area.name)} pieces drawn to scale"><defs>${stonePattern(pid, color)}</defs>`;
-  const font = `font-family="ui-monospace, Menlo, monospace"`;
+  const font = `font-family="-apple-system, &apos;Segoe UI&apos;, Roboto, Helvetica, Arial, sans-serif" font-variant-numeric="tabular-nums"`;
   for (const r of rects) {
     const { p, x: rx, y: ry, w, h } = r;
     out += `<rect x="${rx}" y="${ry}" width="${w}" height="${h}" fill="url(#${pid})" stroke="${pal.ink2}" stroke-width="1"/>`;
@@ -253,7 +247,7 @@ function quoteDocHTML(job, cust, q, calc, c = cfg(), standalone = true) {
     <div style="display:flex;gap:14px;align-items:center">${safeImg(c.logo) ? `<img src="${safeImg(c.logo)}" alt="" style="max-height:64px;max-width:160px;object-fit:contain">` : ''}<div><div style="font-size:22px;font-weight:800;letter-spacing:-.01em">${shop}</div>
       <div style="color:#555;font-size:12.5px">${esc(c.shopAddress || '')}${c.shopAddress && (c.shopPhone || c.shopEmail) ? '<br>' : ''}${esc(c.shopPhone || '')}${c.shopPhone && c.shopEmail ? ' · ' : ''}${esc(c.shopEmail || '')}${c.shopWeb ? ' · ' + esc(c.shopWeb) : ''}${c.shopHours ? '<br>Showroom: ' + esc(c.shopHours) : ''}</div></div></div>
     <div style="text-align:right"><div style="font-size:12px;letter-spacing:.14em;color:#888;font-weight:700">COUNTERTOP QUOTE</div>
-      <div style="font-size:20px;font-weight:800;font-family:ui-monospace,Menlo,monospace">${esc(job.number || '')}</div>
+      <div style="font-size:20px;font-weight:800;letter-spacing:.01em">${esc(job.number || '')}</div>
       <div style="color:#555;font-size:12.5px">${fd(d)} · valid until ${fd(valid)}</div></div>
   </div>
   <div style="display:flex;gap:40px;flex-wrap:wrap;margin:16px 0 4px;font-size:13px">

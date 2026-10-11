@@ -12,7 +12,7 @@
   --shadow-lg:0 20px 60px rgba(10,16,13,.25);
   --f-display:"Archivo","Arial Narrow",system-ui,sans-serif;
   --f-body:"Instrument Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-  --f-mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --f-mono:"Instrument Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --r:7px; --r-sm:5px;
   --gutter:24px;
 }
@@ -55,7 +55,7 @@ h1,h2,h3{font-family:var(--f-display);font-stretch:112%;font-weight:800;letter-s
 h1{font-size:22px}
 h2{font-size:15px;font-stretch:118%;letter-spacing:.01em}
 h3{font-size:13px;font-stretch:118%;letter-spacing:.02em}
-.mono{font-family:var(--f-mono);font-size:.92em;letter-spacing:-.01em}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums;letter-spacing:0}
 .num{font-variant-numeric:tabular-nums}
 .muted{color:var(--ink-2)}
 .faint{color:var(--ink-3)}
@@ -120,7 +120,7 @@ h3{font-size:13px;font-stretch:118%;letter-spacing:.02em}
 .input,select.input,textarea.input{width:100%;background:var(--surface);border:1px solid var(--line-2);border-radius:var(--r-sm);padding:7px 9px;min-height:34px;transition:border-color .12s,box-shadow .12s}
 .input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)}
 textarea.input{resize:vertical;min-height:70px;line-height:1.45}
-.input.mono{font-family:var(--f-mono);font-size:13px}
+.input.mono{font-family:var(--f-mono);font-size:14px;font-variant-numeric:tabular-nums}
 .input.right{text-align:right}
 .grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
@@ -678,3 +678,7 @@ body.authmode .help-fab{display:none}
 .help-top{background:linear-gradient(160deg,var(--glass-1),var(--glass-2));-webkit-backdrop-filter:blur(14px) saturate(180%);backdrop-filter:blur(14px) saturate(180%);border-color:var(--glass-edge);box-shadow:inset 0 1px 1px rgba(255,255,255,.8),0 2px 8px rgba(20,30,25,.12)}
 .help-top svg{stroke:var(--accent)}
 @media (prefers-reduced-motion:reduce){.help-fab::after{display:none}}
+
+/* plain font everywhere: keep numbers lined up */
+.jcard .jn,.col-h .sum,.piece .sq,.qstats b,.cap small,.act .at .tm,.mday .n,.addon b,.nav-item .count{font-variant-numeric:tabular-nums}
+.qstats b{font-weight:700}
