@@ -23,16 +23,17 @@ function renderRail() {
   const act = navActive();
   const counts = {
     jobs: allJobs().filter((j) => !['closed', 'lost'].includes(j.stage)).length,
+    team: S.mode === 'db' && isAdmin() ? pendingMembers().length : 0,
     mywork: S.me ? Array.from(S.activities.values()).filter((a) => a.date === today() && a.status !== 'done' && (a.crew || []).includes(S.me)).length : 0,
   };
   const team = activeTeam();
   const sync = S.mode === 'db' ? (S.live ? `<div class="sync live"><i></i>Live · synced with your team</div>` : `<div class="sync local"><i></i>Reconnecting…</div>`) : S.mode === 'local' ? `<div class="sync local"><i></i>Demo · this device only</div>` : `<div class="sync"><i></i>Connecting…</div>`;
   const meM = member(S.me);
   const who = S.mode === 'db'
-    ? `<div style="display:flex;align-items:center;gap:9px;min-width:0">${meM ? avatar(meM) : ''}<div style="min-width:0;flex:1"><div style="color:var(--rail-ink);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(meM ? meM.name : (S.auth.user && S.auth.user.email) || '')}</div><div>${esc(ACCESS_LABEL[access()] || '')}</div></div><button class="btn sm ghost" style="color:var(--rail-ink-2)" data-act="sign-out">Sign out</button></div>`
+    ? `<div style="display:flex;align-items:center;gap:9px;min-width:0">${meM ? avatar(meM) : ''}<div style="min-width:0;flex:1"><div style="color:var(--rail-ink);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(meM ? meM.name : (S.auth.user && S.auth.user.email) || '')}</div><div>${esc(ACCESS_LABEL[access()] || '')}</div></div><button class="btn sm ghost" style="color:var(--rail-ink-2)" data-act="sign-out">Sign out</button></div>${S.myShops.length > 1 ? '<button class="btn sm ghost" style="color:var(--rail-ink-2);justify-content:flex-start;padding-left:0" data-act="switch-shop">Switch shop</button>' : ''}`
     : null;
   rail.innerHTML = `
-    <div class="brand">${BRAND}<div><div class="brand-name">KERF</div><div class="brand-sub">${esc(cfg().shopName || 'Countertop shop')}</div></div></div>
+    <div class="brand">${BRAND}<div><div class="brand-name">KERF</div><div class="brand-sub">${esc(shopName() || 'Countertop shop')}</div></div></div>
     ${navFor().map((n) => (n ? `<button class="nav-item" data-act="go" data-view="${n.id}" ${act === n.id ? 'aria-current="page"' : ''}>${icon(n.icon)}<span>${n.name}</span>${counts[n.id] ? `<span class="count">${counts[n.id]}</span>` : ''}</button>` : '<div class="nav-sep"></div>')).join('')}
     <div class="rail-foot">
       ${who || `<label class="field"><span style="color:var(--rail-ink-2);font-weight:600">Working as</span>

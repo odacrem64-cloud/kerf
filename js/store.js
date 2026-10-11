@@ -11,6 +11,7 @@ const S = {
   canWrite: true,
   jobs: new Map(), activities: new Map(), customers: new Map(), team: new Map(),
   members: new Map(), my: null,
+  shopId: '', shop: null, myShops: [],
   notesAll: new Map(), // local mode only
   feed: [], jobNotes: [], jobNotesFor: null,
   settingsDoc: null,
@@ -28,12 +29,14 @@ const S = {
 let SB = null, CHANNEL = null;
 
 /* ---------- who can do what ---------- */
-const access = () => (S.mode === 'db' ? (S.my && S.my.active ? S.my.access : 'crew') : 'admin');
+const access = () => (S.mode === 'db' ? (S.my && S.my.active && S.my.status === 'active' ? S.my.access : 'crew') : 'admin');
 const isAdmin = () => access() === 'admin';
 const isStaff = () => access() !== 'crew';
 const isCrew = () => access() === 'crew';
 const ACCESS_LABEL = { admin: 'Full access', staff: 'Sales', crew: 'Crew' };
-const memberForTeam = (teamId) => Array.from(S.members.values()).find((m) => m.team_id === teamId) || null;
+const memberForTeam = (teamId) => Array.from(S.members.values()).find((m) => m.team_id === teamId && m.status === 'active') || null;
+const pendingMembers = () => Array.from(S.members.values()).filter((m) => m.status === 'pending').sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
+const shopName = () => (S.mode === 'db' && S.shop ? S.shop.name : '') || cfg().shopName || '';
 
 /* ---------- settings ---------- */
 function cfg() {
@@ -156,7 +159,7 @@ async function put(coll, id, data) {
   if (!guardWrite()) return;
   const body = cleanDoc(data);
   applyLocal(coll, id, 'put', body);
-  if (S.mode === 'db') return enqueue(coll + '/' + id, () => sbRun(() => SB.from(coll).upsert({ id, data: body }))).catch(writeErr);
+  if (S.mode === 'db') return enqueue(coll + '/' + id, () => sbRun(() => SB.from(coll).upsert({ id, shop_id: S.shopId, data: body }))).catch(writeErr);
 }
 async function patch(coll, id, data) {
   if (!guardWrite()) return;
@@ -174,7 +177,7 @@ async function bulkPut(coll, docs) {
   for (const d of docs) applyLocal(coll, d.id, 'put', cleanDoc(d));
   if (S.mode !== 'db') return;
   for (let i = 0; i < docs.length; i += 100) {
-    const rows = docs.slice(i, i + 100).map((d) => ({ id: d.id, data: cleanDoc(d) }));
+    const rows = docs.slice(i, i + 100).map((d) => ({ id: d.id, shop_id: S.shopId, data: cleanDoc(d) }));
     await sbRun(() => SB.from(coll).upsert(rows)).catch(writeErr);
   }
 }
@@ -182,14 +185,20 @@ async function saveSettings(data) {
   if (!guardWrite()) return;
   const body = cleanDoc(data);
   S.settingsDoc = body; persistLocal(); schedule();
-  if (S.mode === 'db') return enqueue('settings/shop', () => sbRun(() => SB.from('settings').upsert({ id: 'shop', data: body }))).catch(writeErr);
+  if (S.mode !== 'db') return;
+  await enqueue('settings/shop', () => sbRun(() => SB.from('settings').upsert({ id: S.shopId, shop_id: S.shopId, data: body }))).catch(writeErr);
+  const nm = String(body.shopName || '').trim();
+  if (nm && S.shop && nm !== S.shop.name) {
+    S.shop = { ...S.shop, name: nm };
+    await sbRun(() => SB.from('shops').update({ name: nm }).eq('id', S.shopId)).catch(reportErr);
+  }
 }
 
 /* ---------- loading from Supabase ---------- */
 async function fetchAll(table) {
   const out = [];
   for (let from = 0; ; from += 1000) {
-    const { data, error } = await SB.from(table).select('id,data').order('id').range(from, from + 999);
+    const { data, error } = await SB.from(table).select('id,data').eq('shop_id', S.shopId).order('id').range(from, from + 999);
     if (error) throw error;
     out.push(...data);
     if (data.length < 1000) break;
@@ -198,13 +207,15 @@ async function fetchAll(table) {
 }
 const rowsToMap = (rows) => new Map(rows.map((r) => [r.id, { id: r.id, ...(r.data || {}) }]));
 async function loadRemote() {
-  const [jobs, acts, custs, team, settings, members, feed] = await Promise.all([
+  const [jobs, acts, custs, team, settings, members, feed, shop] = await Promise.all([
     fetchAll('jobs'), fetchAll('activities'), fetchAll('customers'), fetchAll('team'),
-    SB.from('settings').select('id,data').eq('id', 'shop').maybeSingle(),
-    SB.from('members').select('*'),
-    SB.from('notes').select('id,data').order('at', { ascending: false }).limit(40),
+    SB.from('settings').select('id,data').eq('id', S.shopId).maybeSingle(),
+    SB.from('members').select('*').eq('shop_id', S.shopId),
+    SB.from('notes').select('id,data').eq('shop_id', S.shopId).order('at', { ascending: false }).limit(40),
+    SB.from('shops').select('id,name,join_code').eq('id', S.shopId).maybeSingle(),
   ]);
-  for (const r of [settings, members, feed]) if (r.error) throw r.error;
+  for (const r of [settings, members, feed, shop]) if (r.error) throw r.error;
+  S.shop = shop.data || null;
   S.jobs = rowsToMap(jobs); S.activities = rowsToMap(acts); S.customers = rowsToMap(custs); S.team = rowsToMap(team);
   S.settingsDoc = settings.data ? settings.data.data : null;
   S.members = new Map((members.data || []).map((m) => [m.user_id, m]));
@@ -218,7 +229,7 @@ async function loadRemote() {
 }
 async function loadJobNotes(jobId) {
   if (S.mode !== 'db' || !SB) return;
-  const { data, error } = await SB.from('notes').select('id,data').eq('job_id', jobId).order('at', { ascending: false }).limit(500);
+  const { data, error } = await SB.from('notes').select('id,data').eq('shop_id', S.shopId).eq('job_id', jobId).order('at', { ascending: false }).limit(500);
   if (error) { console.warn(error); return; }
   if (S.jobNotesFor === jobId) { S.jobNotes = data.map((r) => ({ id: r.id, ...r.data })); schedule(); }
 }
@@ -226,14 +237,16 @@ function onChange(t, p) {
   const ev = p.eventType;
   const row = p.new && Object.keys(p.new).length ? p.new : null;
   const old = p.old || {};
+  if (t === 'shops') { if (row && row.id === S.shopId) S.shop = { ...(S.shop || {}), ...row }; schedule(); return; }
   if (t === 'members') {
+    if ((row && row.shop_id && row.shop_id !== S.shopId) || (ev === 'DELETE' && old.shop_id && old.shop_id !== S.shopId)) return;
     const m = new Map(S.members);
     if (ev === 'DELETE') m.delete(old.user_id); else if (row) m.set(row.user_id, row);
     S.members = m;
     const uidMe = S.auth.user && S.auth.user.id;
     if (uidMe && ((ev === 'DELETE' && old.user_id === uidMe) || (row && row.user_id === uidMe))) {
       S.my = ev === 'DELETE' ? null : row;
-      if (!S.my || !S.my.active) { showAuth('inactive'); return; }
+      if (!S.my || !S.my.active || S.my.status !== 'active') { routeAfterSignIn(); return; }
       S.me = S.my.team_id || '';
     }
     schedule(); return;
@@ -255,9 +268,14 @@ function onChange(t, p) {
 }
 function startRealtime() {
   if (CHANNEL) { try { SB.removeChannel(CHANNEL); } catch (e) { /* noop */ } }
-  CHANNEL = SB.channel('kerf-live');
+  CHANNEL = SB.channel('kerf-live-' + S.shopId);
   for (const t of ['jobs', 'activities', 'customers', 'team', 'notes', 'settings', 'members']) {
-    CHANNEL.on('postgres_changes', { event: '*', schema: 'public', table: t }, (p) => onChange(t, p));
+    CHANNEL.on('postgres_changes', { event: '*', schema: 'public', table: t, filter: 'shop_id=eq.' + S.shopId }, (p) => onChange(t, p));
+  }
+  CHANNEL.on('postgres_changes', { event: '*', schema: 'public', table: 'shops', filter: 'id=eq.' + S.shopId }, (p) => onChange('shops', p));
+  /* Supabase can't filter delete events, so listen for those separately (they only carry the row's id) */
+  for (const t of ['jobs', 'activities', 'customers', 'team', 'notes', 'members']) {
+    CHANNEL.on('postgres_changes', { event: 'DELETE', schema: 'public', table: t }, (p) => onChange(t, p));
   }
   CHANNEL.subscribe((status) => {
     if (status === 'SUBSCRIBED') {
@@ -283,7 +301,7 @@ function stopRemote() {
   if (CHANNEL && SB) { try { SB.removeChannel(CHANNEL); } catch (e) { /* noop */ } }
   CHANNEL = null; S.live = false;
   for (const c of COLLS) S[c] = new Map();
-  S.members = new Map(); S.my = null; S.feed = []; S.jobNotes = []; S.settingsDoc = null; S.loaded = {};
+  S.members = new Map(); S.my = null; S.shop = null; S.feed = []; S.jobNotes = []; S.settingsDoc = null; S.loaded = {};
 }
 
 /* ---------- demo mode ---------- */
@@ -444,7 +462,7 @@ async function removeSample() {
         for (const id of ids) applyLocal(c, id, 'remove');
         for (let i = 0; i < ids.length; i += 100) await sbRun(() => SB.from(c).delete().in('id', ids.slice(i, i + 100)));
       }
-      await sbRun(() => SB.from('notes').delete().eq('data->>demo', 'true'));
+      await sbRun(() => SB.from('notes').delete().eq('shop_id', S.shopId).eq('data->>demo', 'true'));
       S.feed = S.feed.filter((n) => !n.demo);
     } else {
       for (const c of COLLS) for (const x of Array.from(S[c].values())) if (x.demo) S[c].delete(x.id);

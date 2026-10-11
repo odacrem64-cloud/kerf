@@ -56,8 +56,8 @@ const isEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(s || ''));
 const encode = encodeURIComponent;
 const ACCESS = ['admin', 'staff', 'crew'];
 
-// Who is calling? Verifies the user's session token with Supabase, then loads their login row.
-async function caller(req) {
+// Who is calling? Verifies the user's session token with Supabase.
+async function sessionUser(req) {
   const auth = String(req.headers.authorization || req.headers.Authorization || '');
   const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
   if (!token) return null;
@@ -65,17 +65,42 @@ async function caller(req) {
   const res = await fetch(url + '/auth/v1/user', { headers: { apikey: anon, Authorization: 'Bearer ' + token } });
   if (!res.ok) return null;
   const user = await res.json();
-  if (!user || !user.id) return null;
-  const m = await admin('/rest/v1/members?select=*&user_id=eq.' + encode(user.id));
-  const member = m.ok && Array.isArray(m.json) ? m.json[0] || null : null;
-  return { user, member };
+  return user && user.id ? user : null;
 }
-
-async function activeAdmins() {
-  const r = await admin('/rest/v1/members?select=user_id&access=eq.admin&active=eq.true');
+async function membership(userId, shopId) {
+  const m = await admin('/rest/v1/members?select=*&user_id=eq.' + encode(userId) + '&shop_id=eq.' + encode(shopId));
+  return m.ok && Array.isArray(m.json) ? m.json[0] || null : null;
+}
+async function membershipsOf(userId) {
+  const m = await admin('/rest/v1/members?select=shop_id,status,active,access&user_id=eq.' + encode(userId));
+  return m.ok && Array.isArray(m.json) ? m.json : [];
+}
+async function caller(req, shopId) {
+  const user = await sessionUser(req);
+  if (!user) return null;
+  return { user, member: shopId ? await membership(user.id, shopId) : null };
+}
+async function activeAdmins(shopId) {
+  const r = await admin('/rest/v1/members?select=user_id&access=eq.admin&active=eq.true&status=eq.active&shop_id=eq.' + encode(shopId));
   if (!r.ok) return { error: r };
   return { list: r.json || [] };
 }
+// Checks an existing login's password without signing anyone in on this server.
+async function passwordOk(email, password) {
+  const { url, anon } = env();
+  const res = await fetch(url + '/auth/v1/token?grant_type=password', { method: 'POST', headers: { apikey: anon, 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
+  return res.ok;
+}
+const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+function randomCode(n = 6) {
+  const bytes = require('crypto').randomBytes(n);
+  let s = '';
+  for (let i = 0; i < n; i++) s += CODE_CHARS[bytes[i] % CODE_CHARS.length];
+  return s;
+}
+const randomId = (prefix) => prefix + require('crypto').randomBytes(8).toString('hex');
+const cleanCode = (c) => String(c || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+const MEMBER_COLORS = ['#B33B0B', '#2D5C9C', '#0F7C80', '#7650AD', '#2D7A4C', '#A86C12', '#BE3328', '#5149B8', '#4F5A55', '#9C3D7A'];
 
 async function findUserByEmail(email) {
   const want = String(email).toLowerCase();
@@ -102,8 +127,11 @@ async function createLogin(email, password, name) {
   return { error: errMsg(r, 'Supabase could not create the login') };
 }
 
+async function upsert(table, row) {
+  return admin('/rest/v1/' + table, { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: row });
+}
 async function patchTeam(teamId, patch) {
   return admin('/rest/v1/rpc/kerf_patch', { method: 'POST', body: { tbl: 'team', doc_id: teamId, patch } });
 }
 
-module.exports = { env, sb, admin, send, fail, readBody, errMsg, isEmail, encode, caller, activeAdmins, findUserByEmail, createLogin, patchTeam, ACCESS };
+module.exports = { env, sb, admin, send, fail, readBody, errMsg, isEmail, encode, sessionUser, membership, membershipsOf, caller, activeAdmins, passwordOk, randomCode, randomId, cleanCode, MEMBER_COLORS, findUserByEmail, createLogin, upsert, patchTeam, ACCESS };

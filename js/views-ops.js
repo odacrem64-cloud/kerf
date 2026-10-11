@@ -180,6 +180,19 @@ function loginRowHTML(m) {
   if (m.demo) return '';
   return `<div class="task-f" style="font-size:12.5px;align-items:center"><span class="faint" style="flex:1">No login yet</span>${admin ? `<button class="btn sm" style="flex:0 0 auto;min-width:0;padding-block:4px" data-act="create-login" data-id="${esc(m.id)}">Create login</button>` : ''}</div>`;
 }
+function teamAccessHTML() {
+  if (S.mode !== 'db' || !isAdmin() || !S.shop) return '';
+  const pend = pendingMembers();
+  return `<div class="cols" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))">
+    <div class="card"><div class="card-h"><h2>Shop code</h2></div><div class="card-b" style="display:flex;flex-direction:column;gap:10px">
+      <div class="shopcode mono" style="user-select:all">${esc(S.shop.join_code || '')}</div>
+      <p class="muted" style="margin:0;font-size:13px">Workers open <span class="mono" style="user-select:all">${esc(location.host)}</span>, tap <b>Join a shop</b>, and enter this code. You approve them here.</p>
+      <div class="btn-row"><button class="btn sm dark" data-act="copy-code">${icon('copy')}Copy invite</button><button class="btn sm ghost" data-act="new-code">${icon('refresh')}New code</button></div>
+    </div></div>
+    <div class="card"><div class="card-h"><h2>Join requests</h2><span class="faint">${pend.length}</span></div>
+      <div class="rows">${pend.length ? pend.map((m) => `<div class="row"><span class="avatar" style="--c:var(--accent)">${esc(initials(m.name || m.email))}</span><span class="grow"><span class="t1">${esc(m.name || m.email)}</span><span class="t2">${esc(m.email || '')} · asked ${ago(Date.parse(m.created_at))}</span></span><button class="btn sm primary" data-act="approve-member" data-id="${esc(m.user_id)}">Approve</button><button class="btn sm ghost" data-act="decline-member" data-id="${esc(m.user_id)}">Decline</button></div>`).join('') : '<div class="empty">No one is waiting. New requests show up here right away.</div>'}</div></div>
+  </div>`;
+}
 VIEWS.team = () => {
   const all = Array.from(S.team.values()).sort((a, b) => (a.active === false) - (b.active === false) || String(a.name).localeCompare(String(b.name)));
   const ws = weekStart(today()), we = addDays(ws, 6);
@@ -187,7 +200,8 @@ VIEWS.team = () => {
   return {
     title: 'Team',
     actions: S.canWrite && isAdmin() ? `<button class="btn" data-act="edit-member">${icon('plus')}<span class="lbl">Team member</span></button>` : '',
-    body: `<p class="muted" style="margin:0;max-width:70ch">${S.mode === 'db' ? 'Everyone who sells, templates, cuts or installs. Add a person, then <b>Create login</b> so they can sign in on their phone or computer. Crew logins see their own schedule and can mark work done; they don’t see prices or money.' : 'Everyone who sells, templates, cuts or installs. In demo mode, pick a name under <b>Working as</b> to see that person’s My Work view.'}</p>
+    body: `<p class="muted" style="margin:0;max-width:70ch">${S.mode === 'db' ? 'Everyone who sells, templates, cuts or installs. Send your shop code so people can ask to join, or click <b>Create login</b> on someone’s card to set them up yourself. Crew see their own schedule and can mark work done; they don’t see prices or money.' : 'Everyone who sells, templates, cuts or installs. In demo mode, pick a name under <b>Working as</b> to see that person’s My Work view.'}</p>
+    ${teamAccessHTML()}
     ${all.length ? `<div class="tasks">${all.map((m) => { const l = load(m.id); return `<article class="task" style="${m.active === false ? 'opacity:.6' : ''}"><div class="task-b" style="flex-direction:row;align-items:center;gap:12px">${avatar(m, 'lg')}<div style="flex:1;min-width:0"><div class="title" style="font-size:15px">${esc(m.name)} ${demoTag(m)}</div><div class="muted">${esc(m.role || '')}${m.phone ? ' · <span class="mono">' + esc(m.phone) + '</span>' : ''}${m.active === false ? ' · inactive' : ''}</div></div>${S.canWrite && isAdmin() ? `<button class="btn sm" data-act="edit-member" data-id="${esc(m.id)}">${icon('edit')}Edit</button>` : ''}</div>${loginRowHTML(m)}
       <div class="task-f" style="font-size:12.5px;color:var(--ink-2)">This week: ${l.length ? ACT_TYPES.map((tp) => { const n = l.filter((a) => a.type === tp.id).length; return n ? `<span><b>${n}</b> ${tp.name.toLowerCase()}${n > 1 && tp.id !== 'fabrication' ? 's' : ''}</span>` : ''; }).filter(Boolean).join(' · ') : 'nothing scheduled'}</div></article>`; }).join('')}</div>`
       : `<div class="card"><div class="empty"><b>No team yet.</b><span>Add the people who quote, template, fabricate and install.</span>${S.canWrite && isAdmin() ? '<button class="btn primary" data-act="edit-member">Add first team member</button>' : ''}</div></div>`}`,

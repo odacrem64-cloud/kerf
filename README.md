@@ -21,7 +21,7 @@ You need two free accounts: **Supabase** (stores the data and logins) and **Verc
 1. Go to [supabase.com](https://supabase.com) → **Start your project** → sign in with GitHub.
 2. Click **New project**. Name it `kerf`, set a database password (save it somewhere), pick the region closest to the shop, and click **Create new project**. Wait a minute for it to finish.
 3. In the left menu, open **SQL Editor** → **New query**.
-4. Open [`supabase/schema.sql`](supabase/schema.sql) in this repo, copy everything, paste it in, and click **Run**. You should see "Success."
+4. Open [`supabase/schema.sql`](supabase/schema.sql) in this repo, copy everything, paste it in, and click **Run**. You should see "Success." (After Kerf updates, run the newest version of this file again. It's safe to re-run.)
 5. Recommended: **Authentication** → **Sign In / Providers** → turn off **Allow new users to sign up**. Kerf creates logins itself, so nobody needs to sign up on their own.
 
 ### 2. Copy three values from Supabase
@@ -44,17 +44,22 @@ You need two free accounts: **Supabase** (stores the data and logins) and **Verc
 
 4. Click **Deploy**. When it finishes, click the preview to open your site.
 
-### 4. Create the owner login
+### 4. Create your shop
 
-Open the site. It asks you to **Set up your shop** — enter the owner's name, email and a password. That login has full access.
+Open the site and tap **Create a shop**. Name the shop and enter the owner's name, email and password. That login has full access.
 
-### 5. Add the team
+### 5. Bring in the crew
 
-1. Go to **Prices & Settings** and enter your real prices. Add your shop name, phone and address so they print on quotes.
-2. Go to **Team** → **Team member** for each person (name, role, phone, email).
-3. On each person's card, click **Create login**. Kerf makes a password you can text them. Crew sign in on their phone and can tap **Share → Add to Home Screen** to use Kerf like an app.
+1. Go to **Prices & Settings** and enter your real prices and your shop's phone and address (they print on quotes).
+2. Go to **Team**. Your **shop code** is at the top. Tap **Copy invite** and text it to your crew.
+3. Each worker opens the website, taps **Join a shop**, enters the code, their name, email and a password.
+4. Their request shows up under **Join requests** on the Team page. Tap **Approve**, pick their role, and they're in.
+
+You can also set someone up yourself: add them on the Team page and click **Create login** on their card. On a phone, crew can tap **Share → Add to Home Screen** to use Kerf like an app.
 
 Forgot a password? The owner or office opens **Team** → **Manage** on that person's card → **Reset password**.
+
+One website can run many shops. Each shop only ever sees its own data.
 
 ---
 
@@ -93,7 +98,7 @@ In Vercel: your project → **Settings** → **Domains** → add something like 
 | Path | What it is |
 |---|---|
 | `index.html`, `app.css`, `js/` | The app (plain HTML, CSS and JavaScript — no build step) |
-| `api/` | Small server functions Vercel runs: settings check, first owner setup, team logins |
+| `api/` | Small server functions Vercel runs: settings check, create/join a shop, team logins |
 | `supabase/schema.sql` | Database tables and access rules |
 | `vendor/` | Supabase's JavaScript library |
 | `icons/`, `manifest.webmanifest` | Phone home-screen icon |

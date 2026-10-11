@@ -1,50 +1,103 @@
 /* =========================================================
-   Sign-in, first-time setup, and team logins
+   Start screen, sign-in, create / join a shop, team logins
    ========================================================= */
 function showAuth(screen, err = '') {
   S.auth.screen = screen; S.auth.err = err; S.auth.busy = false;
   closeModal();
+  stopPendingPoll();
+  if (screen === 'pending') startPendingPoll();
   render(true);
 }
+const signedIn = () => !!S.auth.user;
+
 function authHTML() {
   const a = S.auth;
   const head = `<div class="auth-brand">${BRAND}<span>KERF</span></div>`;
   const err = a.err ? `<div class="auth-err" role="alert">${esc(a.err)}</div>` : '';
-  const btn = (label) => `<button class="btn primary auth-go" type="submit" data-label="${esc(label)}" ${a.busy ? 'disabled' : ''}>${a.busy ? 'Working…' : label}</button>`;
-  const pw = (id, label, auto) => `<label class="field"><span>${label}</span><div class="pw"><input class="input" id="${id}" type="password" autocomplete="${auto}" required minlength="${auto === 'new-password' ? 8 : 1}"><button type="button" class="btn sm ghost" data-act="pw-toggle" data-for="${id}">Show</button></div></label>`;
+  const btn = (label) => `<button class="btn primary auth-go" type="submit" data-label="${esc(label)}" ${a.busy ? 'disabled' : ''}>${a.busy ? 'Working…' : esc(label)}</button>`;
+  const pw = (id, label, auto) => `<label class="field"><span>${label}</span><div class="pw"><input class="input" id="${id}" type="password" autocomplete="${auto}" minlength="${auto === 'new-password' ? 8 : 1}"><button type="button" class="btn sm ghost" data-act="pw-toggle" data-for="${id}">Show</button></div></label>`;
+  const back = (to = 'start') => `<button type="button" class="btn ghost sm auth-back" data-act="auth-screen" data-v="${signedIn() && to === 'start' ? 'noshop' : to}">${icon('back')}Back</button>`;
+  const who = signedIn() ? '' : `
+        <label class="field"><span>Your name</span><input class="input" id="au-name" autocomplete="name"></label>
+        <label class="field"><span>Email</span><input class="input" id="au-email" type="email" autocomplete="username" inputmode="email"></label>
+        ${pw('au-pass', 'Password (8+ characters)', 'new-password')}
+        <p class="faint" style="font-size:12px;margin:0">Already use Kerf with another shop? Use the same email and password.</p>`;
   let body = '';
-  if (a.screen === 'login') {
-    body = `<h1>Sign in</h1><p class="muted">Quotes, jobs and the schedule for your shop.</p>${err}
-      <form class="auth-form" data-form="login" novalidate>
-        <label class="field"><span>Email</span><input class="input" id="li-email" type="email" autocomplete="username" inputmode="email" required autofocus></label>
-        ${pw('li-pass', 'Password', 'current-password')}
-        ${btn('Sign in')}
-      </form>
-      <p class="faint auth-foot">Forgot your password? Ask the owner or office to reset it from the Team page.</p>`;
-  } else if (a.screen === 'setup') {
-    body = `<h1>Set up your shop</h1><p class="muted">Create the owner login. You’ll add your office staff and crew after this.</p>${err}
-      <form class="auth-form" data-form="setup" novalidate>
-        <label class="field"><span>Your name</span><input class="input" id="su-name" autocomplete="name" required autofocus></label>
-        <label class="field"><span>Email</span><input class="input" id="su-email" type="email" autocomplete="username" inputmode="email" required></label>
-        ${pw('su-pass', 'Password (8+ characters)', 'new-password')}
-        ${btn('Create owner login')}
-      </form>`;
-  } else if (a.screen === 'schema') {
-    body = `<h1>One more step</h1><p class="muted">Kerf is connected to Supabase, but the database tables aren’t set up yet.</p>${err}
-      <ol class="auth-steps"><li>Click <b>Copy setup script</b> below.</li><li>In Supabase, open your project, then <b>SQL Editor</b> → <b>New query</b>.</li><li>Paste, then click <b>Run</b>. You should see “Success.”</li><li>Come back here and click <b>Check again</b>.</li></ol>
-      <div class="btn-row"><button class="btn dark" data-act="copy-schema">${icon('copy')}Copy setup script</button><button class="btn primary" data-act="reload">Check again</button></div>`;
-  } else if (a.screen === 'key') {
-    const has = S.auth.cfg && S.auth.cfg.hasSecret;
-    body = `<h1>${has ? 'Check the secret key' : 'Add the secret key'}</h1><p class="muted">${has ? 'Supabase isn’t accepting the secret key saved in Vercel.' : 'Kerf needs your Supabase secret key saved in Vercel to create logins.'}</p>
-      <ol class="auth-steps"><li>In Supabase: <b>Project Settings</b> → <b>API Keys</b>. Copy the <b>secret</b> key.</li><li>In Vercel: your project → <b>Settings</b> → <b>Environment Variables</b>. Set <b>SUPABASE_SECRET_KEY</b> to that value.</li><li>Open <b>Deployments</b>, click the three dots on the latest one, choose <b>Redeploy</b>, then reload this page.</li></ol>
-      <button class="btn primary" data-act="reload">Check again</button>`;
-  } else if (a.screen === 'inactive') {
-    body = `<h1>Your login is turned off</h1><p class="muted">Ask the owner or office to turn your access back on from the Team page.</p>
-      <button class="btn primary" data-act="sign-out">Sign out</button>`;
-  } else if (a.screen === 'loading') {
-    body = `<h1>Opening your shop…</h1><div class="skeleton" style="padding:10px 0"><i style="height:14px"></i><i style="height:14px;width:70%"></i></div>`;
-  } else {
-    body = `<h1>Something went wrong</h1><p class="muted">${esc(a.err || 'Kerf couldn’t load.')}</p><button class="btn primary" data-act="reload">Try again</button>`;
+  switch (a.screen) {
+    case 'start':
+      body = `<h1>Welcome to Kerf</h1><p class="muted">Quotes, jobs and the schedule for countertop shops.</p>
+        <div class="choice">
+          <button class="choice-btn" data-act="auth-screen" data-v="create">${icon('plus')}<span><b>Create a shop</b><small>For owners. Name your shop and invite your crew.</small></span></button>
+          <button class="choice-btn" data-act="auth-screen" data-v="join">${icon('users')}<span><b>Join a shop</b><small>For workers. Enter the code your boss gives you.</small></span></button>
+        </div>
+        <p class="auth-foot muted">Already have a login? <button class="linkbtn" data-act="auth-screen" data-v="login">Sign in</button></p>`;
+      break;
+    case 'login':
+      body = `${back()}<h1>Sign in</h1>${err}
+        <form class="auth-form" data-form="login" novalidate>
+          <label class="field"><span>Email</span><input class="input" id="li-email" type="email" autocomplete="username" inputmode="email" autofocus></label>
+          ${pw('li-pass', 'Password', 'current-password')}
+          ${btn('Sign in')}
+        </form>
+        <p class="faint auth-foot">Forgot your password? Ask your shop’s owner or office to reset it from the Team page.</p>`;
+      break;
+    case 'create':
+      body = `${back()}<h1>Create your shop</h1><p class="muted">You’ll be the owner. Add your prices and crew after this.</p>${err}
+        <form class="auth-form" data-form="create" novalidate>
+          <label class="field"><span>Shop name</span><input class="input" id="au-shop" placeholder="Alvarez Stone & Granite" autocomplete="organization" autofocus></label>
+          ${who}
+          ${btn('Create shop')}
+        </form>`;
+      break;
+    case 'join':
+      body = `${back()}<h1>Join a shop</h1><p class="muted">Ask your boss for the shop code. They’ll approve you before you can see jobs.</p>${err}
+        <form class="auth-form" data-form="join" novalidate>
+          <label class="field"><span>Shop code</span><input class="input mono code-input" id="au-code" placeholder="ABC123" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="12" autofocus></label>
+          ${who}
+          ${btn('Ask to join')}
+        </form>`;
+      break;
+    case 'noshop':
+      body = `<h1>You’re not in a shop yet</h1><p class="muted">Signed in as ${esc((S.auth.user && S.auth.user.email) || '')}.</p>
+        <div class="choice">
+          <button class="choice-btn" data-act="auth-screen" data-v="create">${icon('plus')}<span><b>Create a shop</b><small>Name your shop and invite your crew.</small></span></button>
+          <button class="choice-btn" data-act="auth-screen" data-v="join">${icon('users')}<span><b>Join a shop</b><small>Enter the code your boss gives you.</small></span></button>
+        </div>
+        <p class="auth-foot"><button class="linkbtn" data-act="sign-out">Sign out</button></p>`;
+      break;
+    case 'pickshop':
+      body = `<h1>Choose a shop</h1>
+        <div class="choice">${S.myShops.map((m) => `<button class="choice-btn" data-act="pick-shop" data-id="${esc(m.shop_id)}">${icon('home')}<span><b>${esc(m.name || 'Shop')}</b><small>${m.status === 'pending' ? 'Waiting for approval' : !m.active ? 'Login turned off' : esc(ACCESS_LABEL[m.access] || '')}</small></span></button>`).join('')}</div>
+        <p class="auth-foot"><button class="linkbtn" data-act="auth-screen" data-v="noshop">Create or join another shop</button> · <button class="linkbtn" data-act="sign-out">Sign out</button></p>`;
+      break;
+    case 'pending': {
+      const m = S.myShops.find((x) => x.shop_id === S.pendingShop) || {};
+      body = `<h1>Waiting for approval</h1><p class="muted">You asked to join <b>${esc(m.name || 'the shop')}</b>. Once the owner or office approves you on their Team page, you’ll get in automatically.</p>
+        <div class="btn-row"><button class="btn primary" data-act="check-again">Check again</button>${S.myShops.length > 1 ? '<button class="btn" data-act="auth-screen" data-v="pickshop">Other shops</button>' : ''}</div>
+        <p class="auth-foot"><button class="linkbtn" data-act="sign-out">Sign out</button></p>`;
+      break;
+    }
+    case 'schema':
+      body = `<h1>One more step</h1><p class="muted">Kerf is connected to Supabase, but the database tables aren’t set up yet.</p>${err}
+        <ol class="auth-steps"><li>Click <b>Copy setup script</b> below.</li><li>In Supabase, open your project, then <b>SQL Editor</b> → <b>New query</b>.</li><li>Paste, then click <b>Run</b>. You should see “Success.”</li><li>Come back here and click <b>Check again</b>.</li></ol>
+        <div class="btn-row"><button class="btn dark" data-act="copy-schema">${icon('copy')}Copy setup script</button><button class="btn primary" data-act="reload">Check again</button></div>`;
+      break;
+    case 'key': {
+      const has = S.auth.cfg && S.auth.cfg.hasSecret;
+      body = `<h1>${has ? 'Check the secret key' : 'Add the secret key'}</h1><p class="muted">${has ? 'Supabase isn’t accepting the secret key saved in Vercel.' : 'Kerf needs your Supabase secret key saved in Vercel.'}</p>
+        <ol class="auth-steps"><li>In Supabase: <b>Project Settings</b> → <b>API Keys</b>. Copy the <b>secret</b> key.</li><li>In Vercel: your project → <b>Settings</b> → <b>Environment Variables</b>. Set <b>SUPABASE_SECRET_KEY</b> to that value.</li><li>Open <b>Deployments</b>, click ⋯ on the latest one, choose <b>Redeploy</b>, then reload this page.</li></ol>
+        <button class="btn primary" data-act="reload">Check again</button>`;
+      break;
+    }
+    case 'inactive':
+      body = `<h1>Your login is turned off</h1><p class="muted">Ask the owner or office to turn your access back on from the Team page.</p>
+        <div class="btn-row"><button class="btn primary" data-act="sign-out">Sign out</button>${S.myShops.length > 1 ? '<button class="btn" data-act="auth-screen" data-v="pickshop">Other shops</button>' : ''}</div>`;
+      break;
+    case 'loading':
+      body = `<h1>Opening your shop…</h1><div class="skeleton" style="padding:10px 0"><i style="height:14px"></i><i style="height:14px;width:70%"></i></div>`;
+      break;
+    default:
+      body = `<h1>Something went wrong</h1><p class="muted">${esc(a.err || 'Kerf couldn’t load.')}</p><button class="btn primary" data-act="reload">Try again</button>`;
   }
   return `<div class="auth-wrap"><div class="auth-card">${head}${body}</div></div>`;
 }
@@ -59,26 +112,64 @@ async function kerfBoot() {
   if (!window.supabase || !window.supabase.createClient) { showAuth('error', 'The Supabase library didn’t load. Check your connection and reload.'); return; }
   SB = window.supabase.createClient(conf.url, conf.anonKey, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false, storageKey: 'kerf-auth' } });
   if (conf.schema === false) { showAuth('schema'); return; }
-  if (conf.keyProblem) { showAuth('key'); return; }
+  if (conf.keyProblem || !conf.hasSecret) { showAuth('key'); return; }
   SB.auth.onAuthStateChange((event) => {
-    if (event === 'SIGNED_OUT') setTimeout(() => { stopRemote(); S.auth.user = null; S.mode = 'loading'; showAuth(S.auth.cfg && S.auth.cfg.needsSetup ? 'setup' : 'login'); }, 0);
+    if (event === 'SIGNED_OUT') setTimeout(() => { stopRemote(); S.auth.user = null; S.shopId = ''; S.myShops = []; S.mode = 'loading'; showAuth('start'); }, 0);
   });
   const { data } = await SB.auth.getSession();
-  if (data && data.session) { await enterRemote(data.session.user); return; }
-  if (!conf.hasSecret) { showAuth('key'); return; }
-  showAuth(conf.needsSetup ? 'setup' : 'login');
+  if (data && data.session) { S.auth.user = data.session.user; await routeAfterSignIn(); return; }
+  showAuth('start');
 }
-async function enterRemote(user) {
-  S.auth.user = user; S.mode = 'db'; S.auth.screen = 'loading'; render(true);
-  try { await loadRemote(); } catch (e) {
+/* where a signed-in person goes: their shop, a shop picker, the waiting screen, or create/join */
+async function routeAfterSignIn(preferShop) {
+  S.auth.screen = 'loading'; render(true);
+  const uidMe = S.auth.user.id;
+  const [mem, shops] = await Promise.all([
+    SB.from('members').select('shop_id,status,active,access').eq('user_id', uidMe),
+    SB.from('shops').select('id,name'),
+  ]);
+  if (mem.error || shops.error) {
+    const e = mem.error || shops.error;
     if (e && (e.code === 'PGRST301' || /JWT/i.test(e.message || ''))) { await SB.auth.signOut(); return; }
-    showAuth('error', 'Couldn’t load your shop: ' + ((e && e.message) || 'unknown error')); return;
+    showAuth('error', 'Couldn’t load your shops: ' + ((e && e.message) || '')); return;
   }
-  if (!S.my || !S.my.active) { showAuth('inactive'); return; }
-  S.auth.screen = null;
+  const names = new Map((shops.data || []).map((x) => [x.id, x.name]));
+  S.myShops = (mem.data || []).map((m) => ({ ...m, name: names.get(m.shop_id) || 'Shop' })).sort((a, b) => a.name.localeCompare(b.name));
+  if (!S.myShops.length) { showAuth('noshop'); return; }
+  const last = preferShop || store.get('kerf-shop', '');
+  let pick = S.myShops.find((m) => m.shop_id === last);
+  if (!pick) {
+    const usable = S.myShops.filter((m) => m.status === 'active' && m.active);
+    if (S.myShops.length === 1) pick = S.myShops[0];
+    else if (usable.length === 1) pick = usable[0];
+    else { showAuth('pickshop'); return; }
+  }
+  await openShop(pick);
+}
+async function openShop(m) {
+  store.set('kerf-shop', m.shop_id);
+  if (m.status === 'pending') { S.pendingShop = m.shop_id; showAuth('pending'); return; }
+  if (!m.active) { showAuth('inactive'); return; }
+  if (S.mode === 'db' && S.shopId && S.shopId !== m.shop_id) stopRemote();
+  S.shopId = m.shop_id; S.mode = 'db'; S.auth.screen = 'loading'; render(true);
+  try { await loadRemote(); } catch (e) { showAuth('error', 'Couldn’t load your shop: ' + ((e && e.message) || 'unknown error')); return; }
+  if (!S.my || !S.my.active || S.my.status !== 'active') { showAuth('inactive'); return; }
+  S.auth.screen = null; stopPendingPoll();
   startRealtime();
-  if (isCrew()) { S.view = 'mywork'; S.params = {}; }
+  S.view = isCrew() ? 'mywork' : 'dashboard'; S.params = {};
   render(true);
+}
+let pendingTimer = null;
+function startPendingPoll() { stopPendingPoll(); pendingTimer = setInterval(() => { if (S.auth.screen === 'pending' && !document.hidden) routeAfterSignIn(S.pendingShop); }, 20000); }
+function stopPendingPoll() { if (pendingTimer) clearInterval(pendingTimer); pendingTimer = null; }
+
+async function postJSON(path, body) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (SB && signedIn()) { const { data } = await SB.auth.getSession(); if (data && data.session) headers.Authorization = 'Bearer ' + data.session.access_token; }
+  const r = await fetch(path, { method: 'POST', headers, body: JSON.stringify(body) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || !j.ok) throw new Error(j.error || 'That didn’t work. Try again.');
+  return j;
 }
 async function submitAuth(form) {
   const kind = form.dataset.form;
@@ -91,19 +182,28 @@ async function submitAuth(form) {
     setBusy(true);
     const { data, error } = await SB.auth.signInWithPassword({ email, password });
     if (error) { setBusy(false); showAuthErr(/invalid/i.test(error.message) ? 'That email and password don’t match.' : error.message); return; }
-    await enterRemote(data.user);
-  } else if (kind === 'setup') {
-    const name = v('su-name'), email = v('su-email'), password = raw('su-pass');
-    if (!name || !email || password.length < 8) { showAuthErr('Fill in your name, email, and a password with at least 8 characters.'); return; }
+    S.auth.user = data.user;
+    await routeAfterSignIn();
+    return;
+  }
+  if (kind === 'create' || kind === 'join') {
+    const body = { action: kind };
+    if (kind === 'create') { body.shopName = v('au-shop'); if (!body.shopName) { showAuthErr('Name your shop.'); return; } }
+    else { body.code = v('au-code'); if (body.code.replace(/[^a-z0-9]/gi, '').length < 4) { showAuthErr('Enter the shop code your boss gave you.'); return; } }
+    if (!signedIn()) {
+      body.name = v('au-name'); body.email = v('au-email').toLowerCase(); body.password = raw('au-pass');
+      if (!body.name || !body.email || body.password.length < 8) { showAuthErr('Fill in your name, email, and a password with at least 8 characters.'); return; }
+    }
     setBusy(true);
-    let j = {};
-    try { const r = await fetch('/api/setup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, email, password }) }); j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'Setup failed.'); }
-    catch (e) { setBusy(false); showAuthErr(e.message); return; }
-    if (S.auth.cfg) S.auth.cfg.needsSetup = false;
-    const { data, error } = await SB.auth.signInWithPassword({ email, password });
-    if (error) { showAuth('login', 'Owner login created. Sign in to continue.'); return; }
-    await enterRemote(data.user);
-    toast('Welcome to Kerf. Start with your prices, then add your team.', { ms: 5000 });
+    let j;
+    try { j = await postJSON('/api/shops', body); } catch (e) { setBusy(false); showAuthErr(e.message); return; }
+    if (!signedIn()) {
+      const { data, error } = await SB.auth.signInWithPassword({ email: body.email, password: body.password });
+      if (error) { showAuth('login', 'You’re all set. Sign in to continue.'); return; }
+      S.auth.user = data.user;
+    }
+    await routeAfterSignIn(j.shopId);
+    if (kind === 'create' && S.auth.screen === null) toast(`${j.shopName} is ready. Start with your prices, then invite your crew from Team.`, { ms: 6000 });
   }
 }
 function setBusy(b) { S.auth.busy = b; const g = $('.auth-go'); if (g) { g.disabled = b; g.textContent = b ? 'Working…' : g.dataset.label || g.textContent; } }
@@ -119,16 +219,8 @@ async function signOut() {
   if (SB) await SB.auth.signOut();
 }
 
-/* ---------- team logins (owner/office) ---------- */
-async function teamApi(body) {
-  const { data } = await SB.auth.getSession();
-  const token = data && data.session && data.session.access_token;
-  if (!token) throw new Error('Your sign-in expired. Reload and sign in again.');
-  const r = await fetch('/api/users', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }, body: JSON.stringify(body) });
-  const j = await r.json().catch(() => ({}));
-  if (!r.ok || !j.ok) throw new Error(j.error || 'That didn’t work. Try again.');
-  return j;
-}
+/* ---------- team logins & join requests (owner/office) ---------- */
+const teamApi = (body) => postJSON('/api/users', { shopId: S.shopId, ...body });
 const WORDS = ['slab', 'quartz', 'granite', 'edge', 'seam', 'sink', 'level', 'polish', 'marble', 'kerf', 'blade', 'island', 'vanity', 'bevel', 'ogee', 'stone'];
 function makePassword() {
   const r = new Uint32Array(3);
@@ -144,7 +236,7 @@ function loginModal(teamId) {
   MS = { kind: 'login', teamId };
   openModal({
     title: `Create a login for ${m.name}`,
-    body: `<p class="muted" style="margin:0">They’ll sign in with this email and password. Give them the password in person or by text; they can keep it.</p>
+    body: `<p class="muted" style="margin:0">Easiest option: send them your shop code so they sign up themselves. Or set up their login here and text them the password.</p>
       <div class="grid2">
         <label class="field span2"><span>Email</span><input class="input" id="lg-email" type="email" inputmode="email" value="${esc(m.email || '')}" autocomplete="off"></label>
         <label class="field span2"><span>Password</span><div class="pw"><input class="input mono" id="lg-pass" value="${esc(makePassword())}" autocomplete="off"><button type="button" class="btn sm ghost" data-act="pw-new" data-for="lg-pass">New</button></div></label>
@@ -167,7 +259,7 @@ function credentialsModal(name, email, password, title = 'Login ready') {
 function manageLoginModal(userId) {
   const mem = S.members.get(userId);
   if (!mem) return;
-  const m = member(mem.team_id) || { name: mem.email };
+  const m = member(mem.team_id) || { name: mem.name || mem.email };
   MS = { kind: 'manage', userId };
   const self = S.auth.user && S.auth.user.id === userId;
   openModal({
@@ -175,11 +267,30 @@ function manageLoginModal(userId) {
     body: `<div class="muted" style="font-size:13px">Signs in as <b class="mono" style="user-select:all">${esc(mem.email || '')}</b></div>
       <label class="field"><span>What they can do</span><select class="input" id="ml-access">${accessOptions(mem.access)}</select></label>
       <label class="check"><input type="checkbox" id="ml-active" ${mem.active ? 'checked' : ''} ${self ? 'disabled' : ''}> Login is turned on</label>
-      <div class="card"><div class="card-b" style="display:flex;flex-direction:column;gap:8px"><b>Reset password</b><div class="pw"><input class="input mono" id="ml-pass" value="${esc(makePassword())}" autocomplete="off"><button type="button" class="btn sm ghost" data-act="pw-new" data-for="ml-pass">New</button></div><div><button class="btn sm" data-act="ml-reset">Set this password</button></div></div></div>`,
-    foot: `${self ? '' : `<button class="btn danger left" data-act="ml-remove">${icon('trash')}Remove login</button>`}<button class="btn" data-act="close-modal">Cancel</button><button class="btn primary" data-act="ml-save">Save</button>`,
+      ${self ? '' : `<div class="card"><div class="card-b" style="display:flex;flex-direction:column;gap:8px"><b>Reset password</b><div class="pw"><input class="input mono" id="ml-pass" value="${esc(makePassword())}" autocomplete="off"><button type="button" class="btn sm ghost" data-act="pw-new" data-for="ml-pass">New</button></div><div><button class="btn sm" data-act="ml-reset">Set this password</button></div></div></div>`}`,
+    foot: `${self ? '' : `<button class="btn danger left" data-act="ml-remove">${icon('trash')}Remove from shop</button>`}<button class="btn" data-act="close-modal">Cancel</button><button class="btn primary" data-act="ml-save">Save</button>`,
   });
 }
+function approveModal(userId) {
+  const mem = S.members.get(userId);
+  if (!mem) return;
+  MS = { kind: 'approve', userId };
+  const free = activeTeam().filter((t) => !memberForTeam(t.id) && !t.demo);
+  openModal({
+    title: `Approve ${mem.name || mem.email}`,
+    body: `<p class="muted" style="margin:0">${esc(mem.email || '')} asked to join ${esc(shopName() || 'your shop')}.</p>
+      <label class="field"><span>Who are they on your team?</span><select class="input" id="ap-team"><option value="new">Add as a new team member</option>${free.map((t) => `<option value="${esc(t.id)}">${esc(t.name)}${t.role ? ' · ' + esc(t.role) : ''}</option>`).join('')}</select></label>
+      <label class="field" id="ap-role-wrap"><span>Role</span><select class="input" id="ap-role">${opts(ROLES.filter((r) => r !== 'Owner'), 'Installer')}</select></label>
+      <label class="field"><span>What they can do</span><select class="input" id="ap-access">${accessOptions('crew')}</select></label>`,
+    foot: `<button class="btn" data-act="close-modal">Cancel</button><button class="btn primary" data-act="ap-save">Approve</button>`,
+  });
+}
+
 const AUTH_ACTIONS = {
+  'auth-screen': (el) => showAuth(el.dataset.v),
+  'pick-shop': (el) => { const m = S.myShops.find((x) => x.shop_id === el.dataset.id); if (m) openShop(m); },
+  'switch-shop': () => { if (S.qdraft && S.qdraft.dirty) { toast('Save or discard your quote first', { bad: true }); return; } stopRemote(); S.mode = 'loading'; showAuth('pickshop'); },
+  'check-again': () => routeAfterSignIn(S.pendingShop),
   'sign-out': () => signOut(),
   reload: () => location.reload(),
   'copy-schema': async () => {
@@ -188,18 +299,33 @@ const AUTH_ACTIONS = {
   },
   'pw-toggle': (el) => { const i = document.getElementById(el.dataset.for); if (!i) return; const show = i.type === 'password'; i.type = show ? 'text' : 'password'; el.textContent = show ? 'Hide' : 'Show'; },
   'pw-new': (el) => { const i = document.getElementById(el.dataset.for); if (i) i.value = makePassword(); },
+  'copy-code': () => { if (S.shop) copyText(`Join ${S.shop.name} on Kerf:\n1. Go to ${location.origin}\n2. Tap “Join a shop”\n3. Enter code ${S.shop.join_code}`); },
+  'new-code': async () => {
+    if (!(await confirmBox('Make a new shop code?', 'The old code stops working. People already on the team aren’t affected.', 'New code'))) return;
+    try { const j = await teamApi({ action: 'newcode' }); S.shop = { ...S.shop, join_code: j.code }; render(true); toast('New shop code ready'); } catch (e) { toast(e.message, { bad: true }); }
+  },
   'create-login': (el) => loginModal(el.dataset.id),
   'manage-login': (el) => manageLoginModal(el.dataset.id),
+  'approve-member': (el) => approveModal(el.dataset.id),
+  'decline-member': async (el) => {
+    const mem = S.members.get(el.dataset.id); if (!mem) return;
+    if (!(await confirmBox(`Decline ${mem.name || mem.email}?`, 'Their request is removed. They can ask again with the shop code.', 'Decline', true))) return;
+    try { await teamApi({ action: 'decline', userId: mem.user_id }); toast('Request declined'); } catch (e) { toast(e.message, { bad: true }); }
+  },
+  'ap-save': async (el) => {
+    const userId = MS.userId; const mem = S.members.get(userId);
+    el.disabled = true;
+    try { await teamApi({ action: 'approve', userId, teamId: val('#ap-team'), role: val('#ap-role'), access: val('#ap-access') }); closeModal(); toast(`${(mem && (mem.name || mem.email)) || 'They'} can sign in now`); }
+    catch (e) { el.disabled = false; toast(e.message, { bad: true, ms: 6000 }); }
+  },
   'lg-create': async (el) => {
     const email = val('#lg-email').toLowerCase(), password = val('#lg-pass'), acc = val('#lg-access');
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { fieldErr('#lg-email', 'Enter a valid email address'); return; }
     if (password.length < 8) { fieldErr('#lg-pass', 'Use at least 8 characters'); return; }
     const m = member(MS.teamId);
     el.disabled = true; el.textContent = 'Creating…';
-    try {
-      await teamApi({ action: 'create', teamId: MS.teamId, email, password, access: acc });
-      credentialsModal(m ? m.name : email, email, password);
-    } catch (e) { el.disabled = false; el.textContent = 'Create login'; toast(e.message, { bad: true, ms: 6000 }); }
+    try { await teamApi({ action: 'create', teamId: MS.teamId, email, password, access: acc }); credentialsModal(m ? m.name : email, email, password); }
+    catch (e) { el.disabled = false; el.textContent = 'Create login'; toast(e.message, { bad: true, ms: 7000 }); }
   },
   'ml-save': async (el) => {
     const userId = MS.userId; const accessV = val('#ml-access'); const act = $('#ml-active');
@@ -213,12 +339,12 @@ const AUTH_ACTIONS = {
     const mem = S.members.get(userId); const m = mem ? member(mem.team_id) : null;
     el.disabled = true;
     try { await teamApi({ action: 'reset', userId, password }); credentialsModal(m ? m.name : 'them', mem ? mem.email : '', password, 'Password changed'); }
-    catch (e) { el.disabled = false; toast(e.message, { bad: true, ms: 6000 }); }
+    catch (e) { el.disabled = false; toast(e.message, { bad: true, ms: 7000 }); }
   },
   'ml-remove': async () => {
     const userId = MS.userId; const mem = S.members.get(userId); const m = mem ? member(mem.team_id) : null;
-    if (!(await confirmBox(`Remove ${m ? m.name : 'this person'}’s login?`, 'They won’t be able to sign in. Their name stays on the team and on past jobs.', 'Remove login', true))) return;
-    try { await teamApi({ action: 'remove', userId }); toast('Login removed'); } catch (e) { toast(e.message, { bad: true, ms: 6000 }); }
+    if (!(await confirmBox(`Remove ${m ? m.name : 'this person'} from the shop?`, 'They won’t be able to sign in to this shop. Their name stays on the team list and on past jobs.', 'Remove', true))) return;
+    try { await teamApi({ action: 'remove', userId }); toast('Removed from the shop'); } catch (e) { toast(e.message, { bad: true, ms: 6000 }); }
   },
 };
 document.addEventListener('submit', (e) => {
@@ -226,4 +352,7 @@ document.addEventListener('submit', (e) => {
   if (!f) return;
   e.preventDefault();
   submitAuth(f);
+});
+document.addEventListener('change', (e) => {
+  if (e.target && e.target.id === 'ap-team') { const w = $('#ap-role-wrap'); if (w) w.hidden = e.target.value !== 'new'; }
 });

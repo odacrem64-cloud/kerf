@@ -244,7 +244,7 @@ function quoteDocHTML(job, cust, q, calc, c = cfg(), standalone = true) {
   let extras = '';
   for (const l of q.lines || []) extras += row(esc(l.desc || 'Additional item'), '', '', money2(l.amount));
   const tot = (k, v, b = false) => `<tr><td style="padding:4px 0;${b ? 'font-weight:700;font-size:16px;border-top:2px solid #1a1a1a;padding-top:10px' : 'color:#555'}">${k}</td><td style="padding:4px 0;text-align:right;${b ? 'font-weight:700;font-size:16px;border-top:2px solid #1a1a1a;padding-top:10px' : ''}">${v}</td></tr>`;
-  const shop = esc(c.shopName || 'Your shop name');
+  const shop = esc(c.shopName || (typeof shopName === 'function' ? shopName() : '') || 'Your shop name');
   const body = `
 <div style="font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1a1a1a;max-width:760px;margin:0 auto;line-height:1.45">
   <div style="display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;border-bottom:3px solid #1a1a1a;padding-bottom:14px">
