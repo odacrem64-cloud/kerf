@@ -48,10 +48,11 @@ VIEWS.inventory = () => {
   const table = list.length ? `<div class="card"><div class="tablewrap"><table class="t"><thead><tr><th></th><th>Serial</th><th>Color</th><th>Price group</th><th class="r">Size</th><th class="r">Sq ft</th><th>Thick</th><th>Location</th><th>Status</th><th>Job</th>${showCost ? '<th class="r">Cost</th>' : ''}</tr></thead><tbody>
     ${list.map((s) => { const j = s.jobId ? jobOf(s.jobId) : null; return `<tr class="click" data-act="slab-edit" data-id="${esc(s.id)}"><td style="width:44px">${slabThumb(s)}</td><td class="mono">${esc(s.serial)}${s.kind === 'remnant' ? ' <span class="tag">Remnant</span>' : ''} ${demoTag(s)}</td><td class="wrap"><b>${esc(slabName(s))}</b>${s.lot ? `<div class="faint" style="font-size:12px">Lot ${esc(s.lot)}</div>` : ''}</td><td>${esc(s.group || '')}</td><td class="r mono">${slabSize(s)}</td><td class="r">${sqft1(slabSqft(s))}</td><td>${esc(s.thick || '')}</td><td>${esc(s.location || '—')}</td><td>${slabStatusPill(s.status)}</td><td>${j ? `<span class="mono">${esc(j.number)}</span> ${esc(lastName((customer(j.customerId) || {}).name))}` : '<span class="faint">—</span>'}</td>${showCost ? `<td class="r">${s.cost ? money(s.cost) : '—'}</td>` : ''}</tr>`; }).join('')}
   </tbody></table></div></div>`
-    : `<div class="card"><div class="empty">${all.length ? '<b>Nothing matches.</b><span>Try All, or clear the search.</span>' : `<b>No slabs in inventory yet.</b><span>When a delivery comes in, tap Receive slabs. Give each slab a serial, size and rack location, then allocate them to jobs.</span>${S.canWrite ? `<button class="btn primary" data-act="slab-receive">${icon('plus')}Receive slabs</button>` : ''}`}</div></div>`;
+    : `<div class="card"><div class="empty">${all.length ? '<b>Nothing matches.</b><span>Try All, or clear the search.</span>' : `<b>No slabs in inventory yet.</b><span>When a delivery comes in, tap Receive slabs. Give each slab a serial, size and rack location, then allocate them to jobs.</span>${S.canWrite ? `<div class="btn-row" style="justify-content:center"><button class="btn primary" data-act="slab-scan">${icon('camera')}Scan a slab</button><button class="btn" data-act="slab-receive">${icon('plus')}Enter by hand</button></div>` : ''}`}</div></div>`;
   return {
     title: 'Inventory',
-    actions: S.canWrite ? `<button class="btn" data-act="slab-receive">${icon('plus')}<span class="lbl">Receive slabs</span></button>` : '',
+    actions: S.canWrite ? `<button class="btn primary" data-act="slab-scan">${icon('camera')}<span class="lbl">Scan slab</span></button><button class="btn" data-act="slab-receive">${icon('plus')}<span class="lbl">Receive slabs</span></button>` : '',
+    noNew: true,
     body: kpis + toolbar + table,
   };
 };
