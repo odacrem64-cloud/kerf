@@ -63,9 +63,33 @@ function actRowHTML(a, opts = {}) {
   </button>`;
 }
 
+/* Home: the week's schedule and the live job board come first, numbers after */
+function boardHTML(jobs, { stages = STAGES, max = Infinity, keep = 'board' } = {}) {
+  const cols = stages.map((s) => ({ s, list: sortForColumn(jobs.filter((j) => j.stage === s.id)) }));
+  return `<div class="board" data-keep-scroll="${keep}">${cols.map(({ s, list }) => `
+    <section class="col" data-drop-stage="${s.id}" aria-label="${esc(s.name)}">
+      <div class="col-h" style="--c:${stageColor(s.id)}"><h3>${esc(s.short || s.name)} <span class="faint num">${list.length}</span></h3><span class="sum">${isCrew() ? '' : moneyK(sum(list, (j) => j.total))}</span></div>
+      ${list.slice(0, max).map(jobCardHTML).join('') || `<div class="faint" style="font-size:12px;padding:8px 6px">${esc(STAGE_HINT[s.id])}</div>`}
+      ${list.length > max ? `<button class="btn sm ghost more-btn" data-act="go" data-view="jobs">+${list.length - max} more</button>` : ''}
+    </section>`).join('')}</div>`;
+}
+function dashWeekHTML() {
+  const t = today();
+  const days = [];
+  for (let i = 0; days.length < 7 && i < 10; i++) {
+    const d = addDays(t, i);
+    if (parseD(d).getDay() === 0 && !actsOnDate(d).length) continue; // skip empty Sundays
+    days.push(d);
+  }
+  return `<div class="weekwrap" data-keep-scroll="dashweek"><div class="week compact">${days.map((d) => {
+    const list = actsOnDate(d);
+    return `<section class="day ${d === t ? 'today' : ''} ${isWeekend(d) ? 'weekend' : ''}" data-drop-date="${d}" aria-label="${fmtD(d)}">
+      <div class="day-h"><div class="d"><b>${parseD(d).getDate()}</b><span>${d === t ? 'Today' : d === addDays(t, 1) ? 'Tomorrow' : DOW[parseD(d).getDay()]}</span>${S.canWrite && !isCrew() ? `<button class="btn icon sm ghost add" data-act="new-act" data-date="${d}" aria-label="Schedule on ${fmtD(d)}">${icon('plus')}</button>` : ''}</div>${capacityHTML(d, list)}</div>
+      <div class="day-b">${list.length ? list.map(actBlockHTML).join('') : '<span class="faint" style="font-size:12px;padding:4px 2px">Open</span>'}</div></section>`;
+  }).join('')}</div></div>`;
+}
 VIEWS.dashboard = () => {
   const jobs = allJobs();
-  if (!jobs.length) return { title: `Welcome${shopName() ? ' to ' + esc(shopName()) : ' to ' + SHOP.name}`, body: isAdmin() ? gettingStartedHTML(true) : welcomeHTML() };
   const t = today(), ws = weekStart(t), we = addDays(ws, 6);
   const mStart = parseD(t.slice(0, 8) + '01').getTime();
   const live = jobs.filter((j) => j.stage !== 'lost');
@@ -77,8 +101,8 @@ VIEWS.dashboard = () => {
   const instSqft = sum(instWeek, (a) => (jobOf(a.jobId) || {}).sqft);
   const weeks = [];
   for (let i = 9; i >= 0; i--) {
-    const s = parseD(addDays(ws, -7 * i)).getTime(), e = s + 7 * 86400000;
-    weeks.push(sum(live.filter((j) => j.soldAt >= s && j.soldAt < e), (j) => j.total));
+    const s0 = parseD(addDays(ws, -7 * i)).getTime(), e = s0 + 7 * 86400000;
+    weeks.push(sum(live.filter((j) => j.soldAt >= s0 && j.soldAt < e), (j) => j.total));
   }
   const d90 = Date.now() - 90 * 86400000;
   const decided = jobs.filter((j) => (j.soldAt && j.soldAt >= d90) || (j.stage === 'lost' && (j.lostAt || j.updatedAt) >= d90));
@@ -86,49 +110,44 @@ VIEWS.dashboard = () => {
   const closeRate = decided.length ? Math.round((won / decided.length) * 100) : null;
   const owed = sum(jobs.filter((j) => j.stage === 'installed'), balanceOf);
 
-  const kpis = `<div class="kpis">
-    <button class="kpi" data-act="go" data-view="jobs"><span class="label">Sold this month</span><span class="value">${money(sum(soldM, (j) => j.total))}</span><span class="sub">${soldM.length} job${soldM.length === 1 ? '' : 's'} · last 10 weeks</span>${sparkBars(weeks)}</button>
-    <button class="kpi" data-act="go" data-view="jobs"><span class="label">Open quotes</span><span class="value">${money(sum(open, (j) => j.total))}</span><span class="sub">${open.length} out for decision${closeRate != null ? ` · ${closeRate}% close rate (90 days)` : ''}</span></button>
-    <button class="kpi" data-act="go" data-view="calendar"><span class="label">Installs this week</span><span class="value">${instWeek.length}</span><span class="sub">${sqft1(instSqft)} sq ft scheduled · ${instWeek.filter((a) => a.status === 'done').length} done</span></button>
-    <button class="kpi" data-act="go" data-view="jobs"><span class="label">In production</span><span class="value">${prod.length}</span><span class="sub">${sqft1(sum(prod, (j) => j.sqft))} sq ft · ${money(owed)} owed on installed jobs</span></button>
-  </div>`;
+  const W = S.canWrite && !isCrew();
+  const schedule = `<section class="dash-sec"><div class="sec-h"><h2>Schedule</h2><span class="faint">Next 7 days · drag to reschedule</span>
+      <div class="btn-row" style="margin-left:auto">${W ? `<button class="btn sm" data-act="new-act">${icon('plus')}Schedule</button>` : ''}<button class="btn sm" data-act="go" data-view="calendar">${icon('cal')}Full calendar</button></div></div>
+    ${dashWeekHTML()}</section>`;
 
-  const pipeStages = STAGES.filter((s) => s.id !== 'closed');
-  const pc = pipeStages.map((s) => ({ s, list: jobs.filter((j) => j.stage === s.id) }));
-  const pipe = `<div class="card"><div class="card-h"><h2>Pipeline</h2><span class="faint num">${money(sum(pc, (x) => sum(x.list, (j) => j.total)))} in active jobs</span></div><div class="card-b">
-    <div class="pipe">${pc.filter((x) => x.list.length).map((x) => `<button style="--c:${stageColor(x.s.id)};flex:${x.list.length}" data-act="go" data-view="jobs" title="${esc(x.s.name)}: ${x.list.length}">${x.list.length}</button>`).join('') || '<span class="faint">No active jobs</span>'}</div>
-    <div class="pipe-legend">${pc.map((x) => `<span style="--c:${stageColor(x.s.id)}"><i></i>${esc(x.s.short || x.s.name)} <b class="num">${x.list.length}</b> <span class="faint num">${moneyK(sum(x.list, (j) => j.total))}</span></span>`).join('')}</div>
-  </div></div>`;
-
-  let d1 = t, d2 = addDays(t, 1);
-  if (isWeekend(t)) { d1 = bizDay(0); d2 = bizDay(1); }
-  const day = (d) => {
-    const list = actsOnDate(d);
-    return `<div class="eyebrow" style="padding:10px 16px 4px">${relDay(d)} · ${fmtD(d)}</div><div class="rows">${list.length ? list.map((a) => actRowHTML(a)).join('') : '<div class="row faint">Nothing scheduled</div>'}</div>`;
-  };
-  const sched = `<div class="card"><div class="card-h"><h2>Coming up</h2><button class="btn sm" data-act="go" data-view="calendar">Open calendar</button></div><div class="card-b tight">${day(d1)}${day(d2)}</div></div>`;
+  const activeStages = STAGES.filter((s) => s.id !== 'closed');
+  const activeJobs = jobs.filter((j) => j.stage !== 'lost' && j.stage !== 'closed');
+  const board = `<section class="dash-sec"><div class="sec-h"><h2>Jobs</h2><span class="faint">${activeJobs.length} active · ${money(sum(activeJobs, (j) => j.total))} · drag to change stage</span>
+      <div class="btn-row" style="margin-left:auto">${W ? `<button class="btn sm primary" data-act="new-job">${icon('plus')}New quote</button>` : ''}<button class="btn sm" data-act="go" data-view="jobs">${icon('board')}All jobs</button></div></div>
+    ${jobs.length ? boardHTML(activeJobs, { stages: activeStages, max: 6, keep: 'dashboard' }) : `<div class="card"><div class="empty"><b>No jobs yet.</b><span>Tap New quote to start the first one.</span>${S.canWrite && isAdmin() ? '<button class="btn" data-act="load-sample">Or load the sample shop to look around</button>' : ''}</div></div>`}</section>`;
 
   const att = jobs.map((j) => ({ j, a: attention(j) })).filter((x) => x.a.length).sort((x, y) => (y.a.some((z) => z.level === 'bad') - x.a.some((z) => z.level === 'bad')) || (y.j.total || 0) - (x.j.total || 0));
-  const attn = `<div class="card"><div class="card-h"><h2>Needs attention</h2><span class="faint">${att.length}</span></div><div class="rows">${att.length ? att.slice(0, 10).map(({ j, a }) => `
+  const attn = `<div class="card"><div class="card-h"><h2>Needs attention</h2><span class="faint">${att.length}</span></div><div class="rows">${att.length ? att.slice(0, 8).map(({ j, a }) => `
     <button class="row" data-act="go" data-view="job" data-id="${esc(j.id)}"><span class="stripe" style="--c:${a.some((z) => z.level === 'bad') ? 'var(--bad)' : 'var(--warn)'}"></span>
     <span class="grow"><span class="t1">${esc(a[0].text)}${a.length > 1 ? ` <span class="faint">+${a.length - 1} more</span>` : ''}</span><span class="t2"><span class="mono">${esc(j.number)}</span> · ${esc(j.name)} · ${esc((customer(j.customerId) || {}).name || '')}</span></span>
     ${stagePill(j.stage)}</button>`).join('') : '<div class="empty"><b>All clear.</b><span>Nothing is stuck right now.</span></div>'}</div></div>`;
 
-  const feed = feedList().slice(0, 14);
+  const feed = feedList().slice(0, 10);
   const feedHTML = `<div class="card"><div class="card-h"><h2>Recent activity</h2></div><div class="rows">${feed.length ? feed.map((n) => {
     const j = jobOf(n.jobId); const m = member(n.by);
     return `<button class="row" ${j ? `data-act="go" data-view="job" data-id="${esc(j.id)}"` : ''}>${m ? avatar(m) : '<span class="avatar" style="--c:var(--ink-3)">·</span>'}
       <span class="grow"><span class="t2" style="white-space:normal;color:var(--ink)">${n.kind === 'issue' ? '<span class="tag bad">Issue</span> ' : ''}${esc(n.text)}</span><span class="t2">${j ? `<span class="mono">${esc(j.number)}</span> · ${esc(j.name)} · ` : ''}${ago(n.at)}</span></span></button>`;
   }).join('') : '<div class="empty">Updates from the crew show up here.</div>'}</div></div>`;
 
-  const shop = cfg().shopName;
+  const kpis = isCrew() ? '' : `<section class="dash-sec"><div class="sec-h"><h2>Numbers</h2></div><div class="kpis">
+    <button class="kpi" data-act="go" data-view="jobs"><span class="label">Sold this month</span><span class="value">${money(sum(soldM, (j) => j.total))}</span><span class="sub">${soldM.length} job${soldM.length === 1 ? '' : 's'} · last 10 weeks</span>${sparkBars(weeks)}</button>
+    <button class="kpi" data-act="go" data-view="jobs"><span class="label">Open quotes</span><span class="value">${money(sum(open, (j) => j.total))}</span><span class="sub">${open.length} out for decision${closeRate != null ? ` · ${closeRate}% close rate (90 days)` : ''}</span></button>
+    <button class="kpi" data-act="go" data-view="calendar"><span class="label">Installs this week</span><span class="value">${instWeek.length}</span><span class="sub">${sqft1(instSqft)} sq ft · ${instWeek.filter((a) => a.status === 'done').length} done</span></button>
+    <button class="kpi" data-act="go" data-view="jobs"><span class="label">In production</span><span class="value">${prod.length}</span><span class="sub">${sqft1(sum(prod, (j) => j.sqft))} sq ft · ${money(owed)} owed on installed jobs</span></button>
+  </div></section>`;
+
   const hour = new Date().getHours();
   const greet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
   const me = member(S.me);
   return {
     title: `${greet}${me ? ', ' + esc(me.name.split(' ')[0]) : ''}`,
-    crumb: esc((shop ? shop + ' · ' : '') + fmtD(t)),
-    body: `${gettingStartedHTML(false)}${kpis}${pipe}<div class="cols"><div class="stack">${attn}${sched}</div><div class="stack">${feedHTML}</div></div>`,
+    crumb: esc(shopName() + ' · ' + fmtD(t)),
+    body: `${schedule}${board}<div class="cols"><div class="stack">${attn}</div><div class="stack">${feedHTML}</div></div>${kpis}`,
   };
 };
 
@@ -192,12 +211,7 @@ VIEWS.jobs = () => {
       ${sorted.map((j) => { const na = nextAct(j.id); return `<tr class="click" data-act="go" data-view="job" data-id="${esc(j.id)}"><td class="mono">${esc(j.number)} ${demoTag(j)}</td><td class="wrap"><b>${esc(j.name)}</b></td><td>${esc((customer(j.customerId) || {}).name || '')}</td><td>${stagePill(j.stage)}</td><td>${j.material ? `<span style="display:inline-flex;gap:6px;align-items:center"><span class="swatch" style="background:${esc(j.materialColor || '#ccc')}"></span>${esc(j.material)}</span>` : '<span class="faint">—</span>'}</td><td class="r">${j.sqft ? sqft1(j.sqft) : '—'}</td><td class="r">${j.total ? money(j.total) : '—'}</td><td class="r">${j.total ? money(balanceOf(j)) : '—'}</td><td>${na ? `${esc(actType(na.type).name)} ${relDay(na.date)}` : '<span class="faint">—</span>'}</td><td>${avatar(member(j.salesId))}</td><td class="faint">${ago(j.updatedAt)}</td></tr>`; }).join('') || `<tr><td colspan="11"><div class="empty">No jobs match.</div></td></tr>`}
     </tbody></table></div></div>`;
   } else {
-    const cols = STAGES.map((s) => ({ s, list: sortForColumn(jobs.filter((j) => j.stage === s.id)) }));
-    body = `<div class="board" data-keep-scroll="board">${cols.map(({ s, list }) => `
-      <section class="col" data-drop-stage="${s.id}" aria-label="${esc(s.name)}">
-        <div class="col-h" style="--c:${stageColor(s.id)}"><h3>${esc(s.short || s.name)} <span class="faint num">${list.length}</span></h3><span class="sum">${moneyK(sum(list, (j) => j.total))}</span></div>
-        ${list.map(jobCardHTML).join('') || `<div class="faint" style="font-size:12px;padding:8px 6px">${esc(STAGE_HINT[s.id])}</div>`}
-      </section>`).join('')}</div>`;
+    body = boardHTML(jobs);
   }
   return { title: 'Jobs', body: toolbar + body };
 };

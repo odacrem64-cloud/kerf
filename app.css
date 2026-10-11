@@ -633,3 +633,20 @@ body.authmode .help-fab{display:none}
   .topbar h1{flex:1 1 calc(100% - 56px);font-size:19px}
   .topbar .crumb{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 }
+
+/* ---------- home: schedule + board first ---------- */
+.dash-sec{display:flex;flex-direction:column;gap:10px;min-width:0}
+.sec-h{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.sec-h h2{font-size:17px}
+.sec-h .faint{font-size:12.5px}
+.week.compact .day{min-height:200px}
+.week.compact .day-b{gap:4px}
+.more-btn{align-self:stretch;justify-content:center}
+@media (max-width:640px){
+  .week.compact{grid-template-columns:minmax(0,1fr);min-width:0;overflow:visible}
+  .week.compact .day{min-height:0}
+  .week.compact .day-h{flex-direction:row;align-items:center;justify-content:space-between}
+  .week.compact .day-h .cap{min-width:120px}
+  .week.compact .day-h .add{opacity:1}
+  .sec-h .faint{display:none}
+}

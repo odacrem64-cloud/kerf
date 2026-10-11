@@ -3,8 +3,8 @@
    ========================================================= */
 const NAV = [
   { id: 'dashboard', name: 'Dashboard', icon: 'home' },
-  { id: 'jobs', name: 'Jobs', icon: 'board' },
   { id: 'calendar', name: 'Calendar', icon: 'cal' },
+  { id: 'jobs', name: 'Jobs', icon: 'board' },
   { id: 'mywork', name: 'My Work', icon: 'work' },
   null,
   { id: 'customers', name: 'Accounts', icon: 'users' },
@@ -48,7 +48,7 @@ function renderTabbar() {
   const tb = $('#tabbar');
   if (!tb) return;
   const act = navActive();
-  const items = isCrew() ? [['mywork', 'My Work', 'work'], ['calendar', 'Calendar', 'cal'], ['inventory', 'Slabs', 'slab']] : [['dashboard', 'Home', 'home'], ['jobs', 'Jobs', 'board'], ['calendar', 'Calendar', 'cal'], ['mywork', 'My Work', 'work']];
+  const items = isCrew() ? [['mywork', 'My Work', 'work'], ['calendar', 'Calendar', 'cal'], ['inventory', 'Slabs', 'slab']] : [['dashboard', 'Home', 'home'], ['calendar', 'Calendar', 'cal'], ['jobs', 'Jobs', 'board'], ['mywork', 'My Work', 'work']];
   const moreOn = ['customers', 'inventory', 'team', 'settings'].includes(act);
   tb.innerHTML = items.map(([id, name, ic]) => `<button data-act="go" data-view="${id}" ${act === id ? 'aria-current="page"' : ''}>${icon(ic)}<span>${name}</span></button>`).join('')
     + `<button data-act="more" ${moreOn ? 'aria-current="page"' : ''}>${icon('more')}<span>More</span></button>`;
