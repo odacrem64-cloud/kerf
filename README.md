@@ -13,7 +13,7 @@ Quoting, scheduling, job tracking and slab inventory for **Midwest Surfaces** �
 - **Moraware-style scheduling** — Estimate / Confirmed / Complete activities, your own activity types (Saw, CNC, Polish…), and a calendar by crew member.
 - **Printable forms** — a job sheet for the shop floor and a day packet for each crew member.
 - **Set up for Midwest Surfaces** — address, phone and showroom hours on every quote; their 11 edge profiles and sink lineup from mwsurfaces.com; their 75% deposit / pay-in-full-under-$2,000 rule; their measure and install terms printed on quotes; pre-measure checklist; AM/PM install windows; saw activity types for the Baca SawJet and Donatoni Jet.
-- **Your logo** on the menu and on every quote, **profile photos** for the crew, and a **Help** button with an AI helper.
+- **Your logo** on the menu and on every quote, **profile photos** for the crew, and an **AI Shop Assistant** for how-to questions.
 
 Everyone signs in with their own email and password. Crew logins only see their schedule and job details, not prices or money.
 
@@ -67,9 +67,9 @@ You can also set someone up yourself: add them on the Team page and click **Crea
 Forgot a password? The owner or office opens **Team** → **Manage** on that person's card → **Reset password**.
 
 
-### 6. Optional: turn on the AI helper
+### 6. Optional: turn on the AI Shop Assistant
 
-Every page has a **Help** button. Without any setup it answers common questions from a built-in guide. To let it answer anything in plain English using Claude (pay-as-you-go, about $5 minimum):
+Every page has an **AI Shop Assistant** button. Without any setup it answers common questions from a built-in guide. To let it answer anything in plain English using Claude (pay-as-you-go, about $5 minimum):
 
 1. Create an API key at [console.anthropic.com](https://console.anthropic.com) (**API Keys** → **Create key**) and add a few dollars of credit. Each question costs a fraction of a cent.
 2. In Vercel → **Settings** → **Environment Variables**, add `ANTHROPIC_API_KEY` with that key, then redeploy.
