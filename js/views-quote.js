@@ -105,7 +105,7 @@ function quoteTermsHTML(q) {
       <label class="field"><span>Minimum job charge</span><input class="input mono right" id="q-min" inputmode="decimal" value="${q.minCharge || ''}" placeholder="0" data-q="min"></label>
       <label class="field"><span>Quote good for (days)</span><input class="input mono right" id="q-valid" inputmode="numeric" value="${q.validDays || ''}" data-q="valid"></label>
     </div>
-    <label class="field"><span>Notes on the customer copy</span><textarea class="input" id="q-notes" data-q="notes" placeholder="Includes one undermount sink cutout and faucet hole. Our standard terms print below this.">${esc(q.notes || '')}</textarea></label>
+    <label class="field"><span>Notes on the customer copy</span><textarea class="input" id="q-notes" data-q="notes" placeholder="Includes one undermount sink cutout and faucet hole. Your terms and conditions print on the following pages.">${esc(q.notes || '')}</textarea></label>
   </div></div>`;
 }
 function quoteEditorHTML() {

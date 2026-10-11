@@ -43,6 +43,7 @@ function cfg() {
   const d = S.settingsDoc || {};
   const out = { ...DEFAULT_SETTINGS, ...d };
   for (const k of ['materials', 'edges', 'addons']) if (!Array.isArray(d[k])) out[k] = DEFAULT_SETTINGS[k];
+  if (d.quoteTerms === MWS_TERMS_V1) out.quoteTerms = MWS_TERMS; // saved the old starter summary → use their real terms
   return out;
 }
 

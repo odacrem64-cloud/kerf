@@ -12,7 +12,7 @@ Quoting, scheduling, job tracking and slab inventory for **Midwest Surfaces** �
 - **Accounts & contacts** — builders, dealers and homeowners, each with their contacts, plus an on-site contact per job.
 - **Moraware-style scheduling** — Estimate / Confirmed / Complete activities, your own activity types (Saw, CNC, Polish…), and a calendar by crew member.
 - **Printable forms** — a job sheet for the shop floor and a day packet for each crew member.
-- **Set up for Midwest Surfaces** — address, phone and showroom hours on every quote; their 11 edge profiles and sink lineup from mwsurfaces.com; their 75% deposit / pay-in-full-under-$2,000 rule; their measure and install terms printed on quotes; pre-measure checklist; AM/PM install windows; saw activity types for the Baca SawJet and Donatoni Jet.
+- **Set up for Midwest Surfaces** — address, phone and showroom hours on every quote; their 11 edge profiles and sink lineup from mwsurfaces.com; their 75% deposit / pay-in-full-under-$2,000 rule; their full proposal wording on every printed quote (opening paragraph, Acceptance of Proposal with the 3-day cancellation, the 27 Terms and Conditions, and the What to Expect page — editable under Prices & Settings → Proposal wording); pre-measure checklist; AM/PM install windows; saw activity types for the Baca SawJet and Donatoni Jet.
 - **Your logo** on the menu and on every quote, **profile photos** for the crew, and an **AI Shop Assistant** for how-to questions.
 
 Everyone signs in with their own email and password. Crew logins only see their schedule and job details, not prices or money.

@@ -160,7 +160,128 @@ const MEMBER_COLORS = ['#B33B0B', '#2D5C9C', '#0F7C80', '#7650AD', '#2D7A4C', '#
 const AREA_PRESETS = ['Kitchen', 'Island', 'Vanity', 'Bar top', 'Laundry', 'Fireplace', 'Outdoor kitchen', 'Shower curb & niche'];
 
 /* Midwest Surfaces — details from mwsurfaces.com (Oct 2026). Prices are starter numbers: set the real ones in Settings. */
-const MWS_TERMS = `Before we measure: cabinets must be in their final position and securely screwed to the wall. Sinks and appliances must be on site (farm sinks fully installed). Countertops must be completely cleared. The field measure ticket must be signed; no changes of any kind are accepted after sign-off. Missing items or a return visit carry a $150 trip charge.
+/* Wording from Midwest Surfaces' own proposal form (Proposal + Terms and Conditions + What to Expect). */
+const MWS_INTRO = `We hereby propose to furnish Material and Labor. This Estimate is based upon clients plans and is subject to adjustment after Midwest Surfaces has field measured the job site. Unless otherwise noted, this estimate does not include reconnect or removal of existing tops, plumbing or gas connections.
+This proposal is limited to items and or materials that are in stock and available on the date of this proposal only. Midwest Surfaces cannot guarantee the availability of any items and or materials beyond this date.`;
+const MWS_ACCEPT = `The prices, specifications and conditions provided on this proposal (the “Proposal”), and the terms and conditions appearing on the following pages, are satisfactory and are hereby accepted by Customer. Contractor is authorized to perform the scope of work described herein as specified, subject to the instructions appearing on the face of this Proposal and the terms and conditions appearing on the reverse side hereof. Payment by Customer to Contractor shall be made as outlined above, subject to the instructions appearing on the face of this Proposal and the terms and conditions appearing on the following pages.
+Once this proposal has been accepted, no cancellations will be permitted unless written notice is sent by Customer to Contractor within three (3) days of date of acceptance.`;
+const MWS_TERMS = `1. Entire Agreement
+These Terms and Conditions govern the Proposal and are incorporated into any subsequent contract between the parties as if fully set forth therein. Together with the Proposal and any subsequent contract, purchase order, or other writing, they form the “Contract Documents,” which constitute the entire integrated agreement between Midwest Surfaces and Customer (collectively, “the parties”) relating to the subject matter. The Contract Documents supersede all prior understandings, proposals, negotiations, representations, communications, or agreements, whether oral, written, or implied.
+By signing or accepting the Contract Documents, Customer represents and warrants that it has carefully reviewed and independently investigated all terms and is not relying on any representations, inducements, or understandings outside of the Contract Documents. The Contract Documents may be amended only by a written agreement signed by the President of Midwest Surfaces and an authorized representative of Customer.
+2. Performance of Work
+All work performed by Midwest Surfaces under the Contract Documents (“Work”) will be completed in a workmanlike manner according to standard industry practices. To the extent required by law, all Work shall be performed by individuals duly licensed and authorized to perform such services.
+3. Price and Changes
+Customer shall pay Midwest Surfaces the amounts stated in the Contract Documents (“Price”) for the satisfactory performance of the Work. The Price includes the fixed estimate in the Proposal as well as any time-and-material, unit, or alternate prices, and is subject to additions and deductions as provided in the Contract Documents.
+Any alteration or deviation from the specifications in the Proposal that involves extra costs — including Midwest Surfaces’ reasonable costs for demobilization, delay, and remobilization — will be performed only upon a written change order and will be charged as an addition to the Price.
+4. Collection and Lien Costs
+The Price shall include reimbursement to Midwest Surfaces for all costs, expenses, attorneys’ fees, consultants’ fees, and litigation costs incurred or anticipated in connection with the Price or any mechanic’s lien arising from Customer’s failure to make timely payment as required by the Proposal. This includes costs related to work stoppage under Paragraph 12 and any legal action to collect the Price or enforce a lien.
+5. Materials, Equipment, and Warranty
+Midwest Surfaces will supply all materials and equipment reasonably necessary to perform the Work. All Work is guaranteed to be free from defects in materials and workmanship for one (1) year from the date of completion, ordinary wear and tear excepted.
+Any oral or written statements by Midwest Surfaces’ agents, officers, or employees regarding quality, durability, suitability, or any other matter that conflict with this limited warranty are expressly disclaimed and shall not be relied upon by Customer.
+6. Lien Waivers
+Customer may not require lien or claim waivers as a condition of payment. Midwest Surfaces will provide appropriate lien releases or waivers upon receipt of requested progress or final payment.
+7. Payment Terms and Acceptance
+Payment of all or any portion of the Price constitutes Customer’s acceptance of the corresponding Work. Unless otherwise agreed in writing:
+• Jobs over $2,000 require a 75% deposit before work begins, with the balance due at installation.
+• Jobs under $2,000 must be paid in full prior to field measurement and/or fabrication.
+8. No Setoff
+Customer has no right to setoff or withhold any portion of the Price for any claims or liabilities arising outside the Contract Documents.
+9. Delays
+The Price will not be reduced for delays caused by circumstances beyond Midwest Surfaces’ reasonable control, including strikes, material shortages, casualty, or Acts of God.
+10. Limitation of Damages
+Under no circumstances shall Midwest Surfaces be liable for consequential, incidental, special, punitive, or exemplary damages (including loss of profits, revenues, use, cost of substitute goods or services, or downtime), whether arising from breach, tort, or otherwise, even if Midwest Surfaces knew or should have known such damages might occur.
+11. Interest and Late Charges
+Customer shall pay:
+(a) interest on all past-due amounts at 1.5% per month or the maximum rate permitted by law, whichever is greater; and
+(b) a late charge of 5% of the unpaid amount if payment is more than thirty (30) days past due.
+This late charge is liquidated damages and does not prevent Midwest Surfaces from recovering attorneys’ fees and costs as provided in Paragraph 4.
+12. Work Stoppage and Credit Card Authorization
+If Customer fails to make any required payment, Midwest Surfaces may immediately cease work without breach until payment is received. Midwest Surfaces may also charge the outstanding balance to any credit card provided by Customer, and Customer hereby gives irrevocable consent to such charges.
+13. Setoff Rights
+Upon Customer’s failure to pay when due, Midwest Surfaces may set off any amounts owed against any accounts, credits, money, or property of Customer held by Midwest Surfaces, without prior notice or consent.
+14. Confession of Judgment
+Customer authorizes any attorney or clerk of court, upon Customer’s failure to pay when due, to enter judgment by confession against Customer in any court of competent jurisdiction in Illinois for the full Price plus interest, late charges, attorneys’ fees, and court costs. Customer waives stay of execution, right of appeal, and the benefit of all exemption laws. This power may be exercised repeatedly until full payment is received.
+15. Cumulative Rights
+No renewal, extension of payment time, or delay in enforcement affects Customer’s obligations. All rights of Midwest Surfaces are cumulative and may be exercised simultaneously or sequentially.
+16. Governing Law
+The Contract Documents shall be governed by the internal laws of the State of Illinois, without regard to conflict of laws rules.
+17. Installation Requirements
+Midwest Surfaces will not install any countertop without proper supports in place at the time of installation. Customer must provide all plumbing and appliance templates at or before Field Measurement.
+18. Natural Stone Variations
+Natural stone varies in structure, pitting, color, veining, and other characteristics. No returns or rejections are allowed for natural variations. No return or rejection of material or layout is permitted after fabrication begins. If Customer does not inspect the raw material and layout, Customer accepts the material and layout as selected by Midwest Surfaces.
+19. Field Measurement Standards
+During Field Measurement, Midwest Surfaces will provide an overhang of approximately 1” to 1¼” at all support structures unless otherwise noted. Countertop edges will overhang cabinet door/drawer fronts by approximately ¾” (or the cabinet itself if no doors/drawers exist) unless otherwise noted. At appliance openings, countertops will be flush to the cabinet sides unless otherwise noted. All measurements are subject to a ± 1/8” tolerance. Stone-to-stone seams will be approximately 1/16” wide and will be determined at fabrication in Midwest Surfaces’ sole discretion.
+20. Appliances and Fixtures at Measurement
+All appliances (cooktops, vents, etc.), plumbing fixtures (sinks, faucets, etc.), and any items requiring cutouts must be at the jobsite during Field Measurement. Customer is responsible for selecting appliances that allow for a structurally sound countertop after cutouts. If required items are missing, a $150 rescheduling fee will apply. If a cutout would compromise structural integrity, Midwest Surfaces will discuss alternatives during measurement.
+21. Undermount Sinks
+Undermount sinks will be cut using the supplied template unless otherwise noted during Field Measurement. Any accessories intended for the undermount sink must be presented and discussed at the time of measurement.
+22. Installation Surfaces and On-Site Work
+Unless otherwise noted, installation occurs on Customer-supplied flat, prepared, and level surfaces and/or securely installed cabinets. On-site cutouts are an extra charge unless included in the Proposal.
+23. Severability
+If any provision of the Contract Documents is held invalid, illegal, or unenforceable by a court, it shall be enforced to the maximum extent possible, and the remaining provisions shall remain in full force and effect.
+24. Conflict Resolution
+In case of conflict between Contract Documents, the later-dated document prevails. In case of conflict within these Terms, the provision imposing the higher standard, shorter notice, or greater requirement on Customer shall prevail.
+25. Claims and Venue
+Any claim or cause of action must be filed in a court located in Will County, State of Illinois, within two (2) years of discovery but no later than four (4) years from the date of the incident. Customer waives any right to a jury trial. This provision survives termination of the Proposal.
+26. Customer Authority
+If Customer is a corporation, LLC, limited partnership, or similar entity, Customer represents and warrants that it is duly organized under the laws of its state of formation and has full power and authority to enter into and perform the Contract Documents.
+27. Insurance and Permits
+Customer shall obtain and maintain all necessary insurance (including fire and tornado) and secure all required permits at its own expense. Midwest Surfaces maintains adequate public liability insurance and workers’ compensation coverage.`;
+const MWS_EXPECT = `Scheduling & Arrival Windows
+Scheduled time is not a guaranteed start time. It is a window of arrival between 9:00 AM – 1:00 PM or 1:00 PM – 5:00 PM.
+On rare occasions, due to circumstances beyond our control, we may arrive outside of the scheduled window.
+A typical kitchen countertop installation takes 3–5 hours on average.
+Appointments
+There will be only one scheduled measure and installation appointment per project. We do not call to confirm appointments.
+If you are not available when we arrive and we are unable to measure or install, an additional $150 trip charge will apply.
+Preparation Requirements Before Measurement
+• All cabinets, including end panels and legs, must be securely screwed to the wall and in their final location before we measure.
+• If any cabinets are missing or not securely installed, we cannot perform the measurement.
+• If you did not purchase your sink(s) from us, the sink(s) must be at your home at the time of measurement.
+• All sinks and appliances are required for accurate measurement. If they are not present, you will incur a $150 trip charge for a return measurement appointment.
+• Farm sinks must be fully installed prior to measurement.
+• Any new appliances must be in their final position for both measurement and installation.
+• All countertops must be completely cleared before we arrive to measure.
+You will be required to review and sign off on the field measure shop ticket. No changes of any kind will be accepted after sign-off.
+Installation Day Guidelines
+• We do not reconnect plumbing or install your faucet.
+• We do not reconnect any appliances.
+• If you have animals or children that are sensitive to chemicals, they must not be on site during installation.
+• Measure and installation crews are required to wear shoes at all times.
+• Installers are not allowed to walk on tarps, as this creates a dangerous trip hazard. Tarps may be used only after all countertops are set in place.
+• Most cooktop and drop-in cut-outs are finished on site and will create dust. Faucet holes are drilled in your home, which will also create dust.
+Natural Stone Characteristics
+Natural stone is a product of nature and commonly contains pits, fissures, veining, and color variations. Each piece has its own unique appearance, texture, and polish. These natural variations should be expected and are not considered defects.
+Backsplash Installation Notes
+Backsplashes sit directly on the countertop and flush against the wall. Stone does not flex.
+• If your walls are bowed, you may see small gaps behind the backsplash. In most cases, these can be filled with paintable caulk.
+• If the gap is too large, you may need to repair the drywall to correct it.
+• If you have existing tile and ordered a 4” backsplash, minor gaps may occur between the new backsplash and the tile. These can usually be grouted after installation.
+Plumbing & Silicone Curing
+Midwest Surfaces does not reconnect any plumbing after installation of the countertop.
+• Do not reconnect the plumbing or have a plumber do so until the next day.
+• Do not use the sink or dishwasher until the plumbing is reconnected and the silicone has fully cured.
+Overhang Supports
+All overhangs greater than 8 inches require proper supports in place prior to installation. Midwest Surfaces does not install supports.
+We cannot install granite without proper supports. It is your responsibility to have these in place before installation.
+Any knee wall that is 4” wide with an overhang must have supports installed to bear the weight of the granite.
+Tear-Out & Haul Away
+Tear-out and haul-away of existing countertops is an optional service and is not included unless specifically stated in your contract. Please inform us prior to signing the contract if you require this service.
+If we perform the tear-out:
+• Dust will be generated. We recommend emptying all cabinets and drawers, especially the cooktop and sink cabinets.
+• Although our installers are careful, minor drywall dings, nicks, or damage may occur. You may need to make minor repairs afterward.
+Countertop Care & Maintenance
+• Never sit, stand, or walk on your quartz or stone countertops.
+Cleaning & Sealing (Granite Only)
+Cleaning and sealing the granite is the final step of your installation. We apply Miracle Sealants 511 Impregnator, which forms an invisible barrier that is resistant to moisture and stains while still allowing vapor to escape.
+Daily Cleaning
+Use a mild soap and water or 409 Natural Stone Cleaner (available at Menards, Jewel, or Ace Hardware). Wipe up all spills immediately to avoid staining.
+Re-Sealing
+We recommend re-sealing your granite every 6 months with 511 Impregnator (available in the flooring department at Menards or Home Depot). Follow the directions on the package.
+A temporary haze or streaking may appear for up to three weeks after sealing. This is normal and will disappear with regular cleaning.
+Quartz countertops do not require sealing.`;
+/* Earlier starter terms (summarised from mwsurfaces.com). Shops that saved these get the real wording above instead. */
+const MWS_TERMS_V1 = `Before we measure: cabinets must be in their final position and securely screwed to the wall. Sinks and appliances must be on site (farm sinks fully installed). Countertops must be completely cleared. The field measure ticket must be signed; no changes of any kind are accepted after sign-off. Missing items or a return visit carry a $150 trip charge.
 Installation: arrival is a window (9 AM–1 PM or 1 PM–5 PM), not a set time, with one appointment per project. Overhangs over 8" need supports installed before installation (not provided by Midwest Surfaces). Pets or children sensitive to chemicals should not be on site. Cutouts and faucet holes create dust.
 Plumbing: we do not reconnect plumbing, faucets or appliances. Wait until the next day to reconnect plumbing, and don't use the sink or dishwasher until the silicone has cured.
 Tear-out is optional and not included unless listed on this quote.
@@ -175,7 +296,7 @@ const DEFAULT_SETTINGS = {
     { id: 'at_delivery', name: 'Delivery', color: '#0F7C80' },
   ],
   taxRate: 0, depositPct: 75, payInFullUnder: 2000, tripCharge: 150, minCharge: 1200, tearOutPerSqft: 8, quoteValidDays: 30,
-  quoteTerms: MWS_TERMS,
+  proposalIntro: MWS_INTRO, acceptText: MWS_ACCEPT, quoteTerms: MWS_TERMS, expectText: MWS_EXPECT,
   slabL: 126, slabW: 63,
   capInstallSqft: 160, capTemplates: 4,
   materials: [
@@ -191,7 +312,7 @@ const DEFAULT_SETTINGS = {
     { id: 'm9', group: 'Porcelain', name: 'Porcelain', price: 72, color: '#C8C5BF' },
   ],
   edges: [
-    { id: 'e1', name: 'Eased', price: 0 },
+    { id: 'e1', name: 'Square Eased', price: 0 },
     { id: 'e8', name: '1/4" Radius', price: 0 },
     { id: 'e4', name: 'Beveled', price: 10 },
     { id: 'e3', name: 'Half Bullnose', price: 8 },
@@ -204,17 +325,18 @@ const DEFAULT_SETTINGS = {
     { id: 'e12', name: 'Waterfall', price: 40 },
   ],
   addons: [
-    { id: 'a1', name: 'Undermount sink cutout', price: 0 },
+    { id: 'a1', name: 'Cut out – large undermount', price: 0 },
+    { id: 'a22', name: 'Cut out – small undermount', price: 0 },
     { id: 'a3', name: 'Faucet hole', price: 0 },
     { id: 'a2', name: 'Cooktop cutout', price: 150 },
     { id: 'a4', name: 'Extra drill hole', price: 25 },
-    { id: 'a5', name: 'Outlet cutout', price: 35 },
+    { id: 'a5', name: 'Cut out – electrical', price: 35 },
     { id: 'a6', name: 'Radius corner', price: 45 },
     { id: 'a11', name: 'Farm sink notch', price: 125 },
     { id: 'a10', name: 'Waterfall leg', price: 350 },
     { id: 'a7', name: 'Sink – SS single bowl 3219 (16 ga)', price: 249 },
-    { id: 'a8', name: 'Sink – SS double 50/50 3219 (16 ga)', price: 279 },
-    { id: 'a12', name: 'Sink – SS single bowl 2318 (16 ga)', price: 229 },
+    { id: 'a8', name: 'Sink – MSI 50/50 3219 double bowl handcrafted (16 ga)', price: 279 },
+    { id: 'a12', name: 'Sink – MSI 2318 single bowl handcrafted (16 ga)', price: 229 },
     { id: 'a13', name: 'Sink – SS double 50/50 3118 (18 ga)', price: 199 },
     { id: 'a14', name: 'Sink – SS single bowl 3018 (18 ga, bar/laundry)', price: 179 },
     { id: 'a15', name: 'Sink – SS double 60/40 3120S (18 ga)', price: 209 },
@@ -222,7 +344,7 @@ const DEFAULT_SETTINGS = {
     { id: 'a17', name: 'Sink – Quartz composite QU-670', price: 329 },
     { id: 'a18', name: 'Sink – Quartz composite QU-810', price: 359 },
     { id: 'a19', name: 'Sink – Quartz composite QU-811', price: 359 },
-    { id: 'a9', name: 'Vanity sink – white rectangle porcelain 2015', price: 110 },
+    { id: 'a9', name: 'Vanity sink – MSI 2015 white rectangle', price: 110 },
     { id: 'a20', name: 'Vanity sink – white oval porcelain 1714', price: 95 },
     { id: 'a21', name: 'Trip charge (return visit)', price: 150 },
   ],

@@ -179,10 +179,10 @@ const ACTIONS = {
   /* settings */
   's-add': (el) => { const s = ensureSDraft(); const l = el.dataset.l; const item = l === 'materials' ? { id: uid(), name: '', group: '', price: 0, color: '#CCCCCC' } : l === 'activityTypes' ? { id: 'at_' + uid(), name: '', color: MEMBER_COLORS[(s.activityTypes || []).length % MEMBER_COLORS.length] } : { id: uid(), name: '', price: 0 }; if (!Array.isArray(s[l])) s[l] = []; s[l].push(item); s._dirty = true; render(true); const ids = { materials: 'sm-n-', edges: 'sedges-n-', addons: 'saddons-n-', activityTypes: 'sat-n-' }; const f = document.getElementById(ids[l] + (s[l].length - 1)); if (f) f.focus(); },
   's-restore': async () => {
-    if (!(await confirmBox('Restore the Midwest Surfaces catalog?', 'Materials, edges, sinks, cutouts and quote terms go back to the starter list from mwsurfaces.com. Your shop info stays. Click Save afterwards to keep it.', 'Restore'))) return;
+    if (!(await confirmBox('Restore the Midwest Surfaces catalog?', 'Materials, edges, sinks, cutouts and the proposal wording go back to the starter list from mwsurfaces.com. Your shop info stays. Click Save afterwards to keep it.', 'Restore'))) return;
     const s = ensureSDraft();
     for (const k of ['materials', 'edges', 'addons', 'activityTypes']) s[k] = deepClone(DEFAULT_SETTINGS[k]);
-    s.quoteTerms = DEFAULT_SETTINGS.quoteTerms; s.depositPct = DEFAULT_SETTINGS.depositPct; s.payInFullUnder = DEFAULT_SETTINGS.payInFullUnder;
+    for (const k of ['proposalIntro', 'acceptText', 'quoteTerms', 'expectText']) s[k] = DEFAULT_SETTINGS[k]; s.depositPct = DEFAULT_SETTINGS.depositPct; s.payInFullUnder = DEFAULT_SETTINGS.payInFullUnder;
     s._dirty = true; render(true); toast('Catalog restored. Click Save to keep it.');
   },
   's-del': (el) => { const s = ensureSDraft(); s[el.dataset.l].splice(+el.dataset.i, 1); s._dirty = true; render(true); },

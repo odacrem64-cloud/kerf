@@ -247,6 +247,22 @@ function jobRollup(q, calc) {
 }
 
 /* ---------- customer-facing quote document ---------- */
+/* Fine print: short lines without end punctuation print as headings, "• " lines as bullets, the rest as paragraphs. */
+function finePrintHTML(text) {
+  const out = [];
+  let list = [];
+  const flush = () => { if (list.length) { out.push(`<ul style="margin:2px 0 6px;padding-left:15px">${list.join('')}</ul>`); list = []; } };
+  for (const raw of String(text || '').split(/\n/)) {
+    const t = raw.trim();
+    if (!t) { flush(); continue; }
+    if (/^[•\-*]\s+/.test(t)) { list.push(`<li style="margin:2px 0">${esc(t.replace(/^[•\-*]\s+/, ''))}</li>`); continue; }
+    flush();
+    if (t.length <= 70 && !/[.:;,)]$/.test(t)) out.push(`<div style="font-weight:700;color:#1a1a1a;margin:9px 0 2px;break-after:avoid;page-break-after:avoid">${esc(t)}</div>`);
+    else out.push(`<p style="margin:2px 0 5px">${esc(t)}</p>`);
+  }
+  flush();
+  return out.join('');
+}
 function quoteDocHTML(job, cust, q, calc, c = cfg(), standalone = true) {
   const created = q.sentAt || q.createdAt || Date.now();
   const d = new Date(created);
@@ -270,12 +286,15 @@ function quoteDocHTML(job, cust, q, calc, c = cfg(), standalone = true) {
   for (const l of q.lines || []) extras += row(esc(l.desc || 'Additional item'), '', '', money2(l.amount));
   const tot = (k, v, b = false) => `<tr><td style="padding:4px 0;${b ? 'font-weight:700;font-size:16px;border-top:2px solid #1a1a1a;padding-top:10px' : 'color:#555'}">${k}</td><td style="padding:4px 0;text-align:right;${b ? 'font-weight:700;font-size:16px;border-top:2px solid #1a1a1a;padding-top:10px' : ''}">${v}</td></tr>`;
   const shop = esc(c.shopName || (typeof shopName === 'function' ? shopName() : '') || 'Your shop name');
+  const pays = (job.payments || []).filter((p) => Number(p.amount));
+  const paid = round2(pays.reduce((t, p) => t + Number(p.amount), 0));
+  const fdate = (v) => { const x = new Date(String(v).length === 10 ? v + 'T12:00' : v); return isNaN(x) ? '' : (x.getMonth() + 1) + '/' + x.getDate() + '/' + String(x.getFullYear()).slice(2); };
   const body = `
 <div style="font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1a1a1a;max-width:760px;margin:0 auto;line-height:1.45">
   <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:20px;border-bottom:3px solid #1a1a1a;padding-bottom:14px">
     <div style="display:flex;gap:16px;align-items:center;flex:1;min-width:0">${safeImg(c.logo) ? `<img src="${safeImg(c.logo)}" alt="${shop}" style="max-height:86px;max-width:190px;object-fit:contain">` : ''}<div>${safeImg(c.logo) ? '' : `<div style="font-size:22px;font-weight:800;letter-spacing:-.01em">${shop}</div>`}
       <div style="color:#555;font-size:12.5px">${esc(c.shopAddress || '')}${c.shopAddress && (c.shopPhone || c.shopEmail) ? '<br>' : ''}${esc(c.shopPhone || '')}${c.shopPhone && c.shopEmail ? ' · ' : ''}${esc(c.shopEmail || '')}${c.shopWeb ? ' · ' + esc(c.shopWeb) : ''}${c.shopHours ? '<br>Showroom: ' + esc(c.shopHours) : ''}</div></div></div>
-    <div style="text-align:right;flex:none"><div style="font-size:12px;letter-spacing:.14em;color:#888;font-weight:700">COUNTERTOP QUOTE</div>
+    <div style="text-align:right;flex:none"><div style="font-size:12px;letter-spacing:.14em;color:#888;font-weight:700">PROPOSAL</div>
       <div style="font-size:20px;font-weight:800;letter-spacing:.01em">${esc(job.number || '')}</div>
       <div style="color:#555;font-size:12.5px">${fd(d)} · valid until ${fd(valid)}</div></div>
   </div>
@@ -283,6 +302,7 @@ function quoteDocHTML(job, cust, q, calc, c = cfg(), standalone = true) {
     <div><div style="font-size:11px;letter-spacing:.08em;color:#888;font-weight:700">PREPARED FOR</div><b>${esc(cust ? cust.name : '')}</b><br>${esc(cust ? cust.phone || '' : '')}${cust && cust.email ? '<br>' + esc(cust.email) : ''}</div>
     <div><div style="font-size:11px;letter-spacing:.08em;color:#888;font-weight:700">JOB SITE</div><b>${esc(job.name || '')}</b><br>${esc(job.address || (cust && cust.address) || '')}</div>
   </div>
+  ${c.proposalIntro ? `<div style="margin:12px 0 0;font-size:11.5px;color:#444;line-height:1.5">${finePrintHTML(c.proposalIntro)}</div>` : ''}
   ${areasHTML}
   ${extras ? `<h3 style="font-size:14px;margin:22px 0 6px;text-transform:uppercase;letter-spacing:.06em">Additional items</h3><table style="width:100%;border-collapse:collapse;font-size:12.5px"><tbody>${extras}</tbody></table>` : ''}
   <div style="break-inside:avoid;page-break-inside:avoid">
@@ -292,16 +312,29 @@ function quoteDocHTML(job, cust, q, calc, c = cfg(), standalone = true) {
     ${calc.discount ? tot('Discount', '−' + money2(calc.discount)) : ''}
     ${calc.tax ? tot(`Tax (${q.taxRate}%)`, money2(calc.tax)) : ''}
     ${tot('Total', money2(calc.total), true)}
-    ${calc.payFull ? tot(`Paid in full before field measure (jobs under ${money(calc.pif)})`, money2(calc.total)) : calc.deposit ? tot(`${q.depositPct}% deposit before work begins · balance at installation`, money2(calc.deposit)) : ''}
+    ${pays.length ? pays.map((p) => tot(esc([p.method, p.date ? fdate(p.date) : ''].filter(Boolean).join(' ')) || 'Payment', '−' + money2(p.amount))).join('') + tot('Balance due', money2(Math.max(0, calc.total - paid)), true)
+      : calc.payFull ? tot(`Paid in full before field measure (jobs under ${money(calc.pif)})`, money2(calc.total)) : calc.deposit ? tot(`${q.depositPct}% deposit before work begins · balance at installation`, money2(calc.deposit)) : ''}
   </table>
   ${q.notes ? `<div style="margin-top:22px;padding:12px 14px;background:#f6f6f4;border-radius:6px;font-size:12.5px;white-space:pre-wrap">${esc(q.notes)}</div>` : ''}
-  <div style="display:flex;gap:30px;margin-top:34px;font-size:12px;color:#555;flex-wrap:wrap">
-    <div style="flex:1;min-width:200px;border-top:1px solid #999;padding-top:6px">Customer acceptance — I accept this quote and the terms below</div>
-    <div style="width:160px;border-top:1px solid #999;padding-top:6px">Date</div>
+  </div>
+  <div style="break-inside:avoid;page-break-inside:avoid">
+  <div style="margin-top:26px;font-size:11px;color:#444;line-height:1.5">
+    <div style="font-weight:700;letter-spacing:.08em;font-size:10.5px;color:#888;margin-bottom:4px">ACCEPTANCE OF PROPOSAL</div>
+    ${finePrintHTML(c.acceptText || 'I accept this proposal and the terms below.')}
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:26px 30px;margin-top:26px;font-size:11.5px;color:#555">
+    <div style="border-top:1px solid #999;padding-top:5px">Customer signature / title</div>
+    <div style="border-top:1px solid #999;padding-top:5px">Date of acceptance</div>
+    <div style="border-top:1px solid #999;padding-top:5px">Printed name</div>
+    <div style="border-top:1px solid #999;padding-top:5px">For ${shop}</div>
   </div>
   </div>
-  <div style="margin-top:22px;font-size:11px;color:#555;line-height:1.5"><div style="font-weight:700;letter-spacing:.08em;font-size:10.5px;color:#888;margin-bottom:4px">TERMS</div>Measurements are estimates until the field measure is complete; final square footage is confirmed at measure.${String(c.quoteTerms || '').split(/\n+/).filter((x) => x.trim()).map((x) => `<p style="margin:5px 0">${esc(x.trim())}</p>`).join('')}</div>
-
+  ${c.quoteTerms ? `<div style="margin-top:34px;padding-top:4px">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid #1a1a1a;padding-bottom:6px;margin-bottom:8px;break-after:avoid;page-break-after:avoid"><div style="font-weight:800;font-size:14px;letter-spacing:.06em">TERMS AND CONDITIONS</div><div style="font-size:11px;color:#888">${shop} · ${esc(job.number || '')}</div></div>
+    <div style="column-count:2;column-gap:24px;font-size:9.5px;color:#333;line-height:1.42">${finePrintHTML(c.quoteTerms)}</div></div>` : ''}
+  ${c.expectText ? `<div style="break-before:page;page-break-before:always;margin-top:34px;padding-top:4px">
+    <div style="border-bottom:2px solid #1a1a1a;padding-bottom:6px;margin-bottom:8px"><div style="font-weight:800;font-size:14px;letter-spacing:.06em">WHAT TO EXPECT AT YOUR MEASURE AND INSTALLATION</div><div style="font-size:11.5px;color:#666">Important policies & information for your countertop project</div></div>
+    <div style="column-count:2;column-gap:24px;font-size:10px;color:#333;line-height:1.4">${finePrintHTML(c.expectText)}</div></div>` : ''}
 </div>`;
   if (!standalone) return body;
   return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Quote ${esc(job.number || '')} — ${esc(cust ? cust.name : '')}</title><style>@media print{body{margin:0}}</style></head><body style="margin:0;padding:28px;background:#fff">${body}</body></html>`;
