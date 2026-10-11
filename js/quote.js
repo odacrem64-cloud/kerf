@@ -125,26 +125,52 @@ const PAL_UI = { ink: 'var(--ink)', ink2: 'var(--ink-2)', ink3: 'var(--ink-3)', 
 const PAL_DOC = { ink: '#1a1a1a', ink2: '#555', ink3: '#888', edge: '#D9480F', line: '#c9c9c9', slab: '#fff', bg: '#f6f6f4' };
 
 /* to-scale drawing of an area's pieces, finished edges highlighted */
+/* to-scale drawing of an area's pieces with dimension lines (arrows at both ends), finished edges highlighted */
 function areaSVG(area, pal = PAL_UI, maxW = 640, idp = 'st-') {
   const pieces = (area.pieces || []).filter((p) => p.L > 0 && p.D > 0);
   if (!pieces.length) {
     return `<svg viewBox="0 0 ${maxW} 90" role="img" aria-label="No pieces measured yet"><text x="${maxW / 2}" y="50" text-anchor="middle" font-size="13" fill="${pal.ink3}" font-family="system-ui, sans-serif">Enter a length to see the piece drawn to scale</text></svg>`;
   }
-  const pad = 26, gapX = 34, gapY = 40;
+  const padL = 18, padR = 48, padT = 36, padB = 18, gapX = 58, gapY = 52;
   const maxL = Math.max(...pieces.map((p) => p.L));
-  const s = Math.min(3.2, (maxW - pad * 2) / Math.max(maxL, 60));
-  let x = pad, y = pad, rowH = 0, rects = [];
+  const s = Math.min(3.2, (maxW - padL - padR) / Math.max(maxL, 60));
+  let x = padL, y = padT, rowH = 0;
+  const rects = [];
   for (const p of pieces) {
     const w = p.L * s, h = p.D * s;
-    if (x > pad && x + w > maxW - pad) { x = pad; y += rowH + gapY; rowH = 0; }
+    if (x > padL && x + w > maxW - padR) { x = padL; y += rowH + gapY; rowH = 0; }
     rects.push({ p, x, y, w, h });
     x += w + gapX; rowH = Math.max(rowH, h);
   }
-  const H = y + rowH + pad + 6;
+  const H = y + rowH + padB;
   const pid = idp + area.id;
   const color = (area.mat && area.mat.color) || '#ddd';
-  let out = `<svg viewBox="0 0 ${maxW} ${Math.round(H)}" role="img" aria-label="${esc(area.name)} pieces drawn to scale"><defs>${stonePattern(pid, color)}</defs>`;
   const font = `font-family="-apple-system, &apos;Segoe UI&apos;, Roboto, Helvetica, Arial, sans-serif" font-variant-numeric="tabular-nums"`;
+  const dim = pal.ink2;
+  const L = (x1, y1, x2, y2, sw = 0.9) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${dim}" stroke-width="${sw}"/>`;
+  const tri = (pts) => `<polygon points="${pts.map((q) => q.map((n) => Math.round(n * 10) / 10).join(',')).join(' ')}" fill="${dim}"/>`;
+  const A = 6, AW = 2.6; // arrowhead length / half-width
+  /* horizontal dimension: line from x1 to x2 at height yy, arrows pointing outwards to the extension lines */
+  const dimH = (x1, x2, yy, label) => {
+    let o = L(x1, yy, x2, yy);
+    if (x2 - x1 >= 2 * A + 4) o += tri([[x1, yy], [x1 + A, yy - AW], [x1 + A, yy + AW]]) + tri([[x2, yy], [x2 - A, yy - AW], [x2 - A, yy + AW]]);
+    else o += L(x1, yy - 4, x1, yy + 4, 1.2) + L(x2, yy - 4, x2, yy + 4, 1.2);
+    o += `<text x="${(x1 + x2) / 2}" y="${yy - 5}" text-anchor="middle" font-size="11.5" font-weight="600" fill="${pal.ink}" ${font}>${esc(label)}</text>`;
+    return o;
+  };
+  /* vertical dimension at x = xx from y1 to y2 */
+  const dimV = (y1, y2, xx, label) => {
+    let o = L(xx, y1, xx, y2);
+    const room = y2 - y1;
+    if (room >= 2 * A + 4) o += tri([[xx, y1], [xx - AW, y1 + A], [xx + AW, y1 + A]]) + tri([[xx, y2], [xx - AW, y2 - A], [xx + AW, y2 - A]]);
+    else o += L(xx - 4, y1, xx + 4, y1, 1.2) + L(xx - 4, y2, xx + 4, y2, 1.2);
+    const cy = (y1 + y2) / 2;
+    o += room >= 44
+      ? `<text x="${xx + 13}" y="${cy}" text-anchor="middle" font-size="11.5" font-weight="600" fill="${pal.ink}" transform="rotate(-90 ${xx + 13} ${cy})" dominant-baseline="middle" ${font}>${esc(label)}</text>`
+      : `<text x="${xx + 7}" y="${cy + 4}" font-size="11" font-weight="600" fill="${pal.ink}" ${font}>${esc(label)}</text>`;
+    return o;
+  };
+  let out = `<svg viewBox="0 0 ${maxW} ${Math.round(H)}" role="img" aria-label="${esc(area.name)} pieces drawn to scale with dimensions"><defs>${stonePattern(pid, color)}</defs>`;
   for (const r of rects) {
     const { p, x: rx, y: ry, w, h } = r;
     out += `<rect x="${rx}" y="${ry}" width="${w}" height="${h}" fill="url(#${pid})" stroke="${pal.ink2}" stroke-width="1"/>`;
@@ -154,9 +180,12 @@ function areaSVG(area, pal = PAL_UI, maxW = 640, idp = 'st-') {
     if (e.b) out += E(rx, ry, rx + w, ry);
     if (e.l) out += E(rx, ry, rx, ry + h);
     if (e.r) out += E(rx + w, ry, rx + w, ry + h);
-    out += `<text x="${rx + w / 2}" y="${ry - 7}" text-anchor="middle" font-size="11" fill="${pal.ink2}" ${font}>${esc(fmtIn(p.L))}</text>`;
-    if (h > 18) out += `<text x="${rx + w + 6}" y="${ry + h / 2 + 4}" font-size="10.5" fill="${pal.ink3}" ${font}>${esc(fmtIn(p.D))}</text>`;
-    else out += `<text x="${rx + w + 6}" y="${ry + h / 2 + 4}" font-size="10" fill="${pal.ink3}" ${font}>${esc(fmtIn(p.D))}</text>`;
+    // length: extension lines up from the top corners, dimension line above
+    const dy = ry - 14;
+    out += L(rx, ry - 3, rx, dy - 4, 0.7) + L(rx + w, ry - 3, rx + w, dy - 4, 0.7) + dimH(rx, rx + w, dy, fmtIn(p.L));
+    // depth: extension lines right from the right corners, dimension line beside
+    const dx = rx + w + 14;
+    out += L(rx + w + 3, ry, dx + 4, ry, 0.7) + L(rx + w + 3, ry + h, dx + 4, ry + h, 0.7) + dimV(ry, ry + h, dx, fmtIn(p.D));
     if (h >= 20 && w > 60) {
       const dk = isDark(color);
       out += `<text x="${rx + 8}" y="${ry + 16}" font-size="11" font-weight="600" fill="${dk ? '#fff' : '#222'}" font-family="system-ui, sans-serif">${esc((p.label || '').slice(0, Math.max(4, Math.floor(w / 7))))}</text>`;
