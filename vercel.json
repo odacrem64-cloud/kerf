@@ -32,9 +32,6 @@
     }
   ],
   "functions": {
-    "api/scan-slab.js": {
-      "maxDuration": 60
-    },
     "api/help.js": {
       "maxDuration": 30
     }

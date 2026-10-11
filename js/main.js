@@ -242,7 +242,6 @@ document.addEventListener('change', async (e) => {
     const kind = el.dataset.upload, picked = Array.from(el.files), file = picked[0];
     el.value = '';
     if (kind === 'jobfiles') { uploadFiles(el.dataset.id, picked); return; }
-    if (kind === 'scan-photo' || kind === 'scan-label') { scanPicked(kind.slice(5), file); return; }
     if (kind === 'slabphoto') { try { const url = await readImage(file, { max: 640 }); await patch('slabs', el.dataset.id, { photo: url }); slabModal(el.dataset.id); toast('Photo saved'); } catch (err) { toast(err.message, { bad: true }); } return; }
     try {
       if (kind === 'logo') {
@@ -343,6 +342,6 @@ document.addEventListener('drop', async (e) => {
 });
 
 /* ---------- boot ---------- */
-Object.assign(ACTIONS, AUTH_ACTIONS, HELP_ACTIONS, FILE_ACTIONS, INV_ACTIONS, FORM_ACTIONS, SCAN_ACTIONS);
+Object.assign(ACTIONS, AUTH_ACTIONS, HELP_ACTIONS, FILE_ACTIONS, INV_ACTIONS, FORM_ACTIONS);
 window.addEventListener('beforeunload', (e) => { if (S.qdraft && S.qdraft.dirty) { e.preventDefault(); e.returnValue = ''; } });
 kerfBoot();

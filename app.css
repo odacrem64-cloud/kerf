@@ -651,29 +651,4 @@ body.authmode .help-fab{display:none}
   .sec-h .faint{display:none}
 }
 
-/* ---------- slab scanner ---------- */
-.shots{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:10px}
-.shot{position:relative;aspect-ratio:4/3;border:2px dashed var(--line-2);border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-align:center;cursor:pointer;background:var(--surface-2);overflow:hidden;padding:10px;color:var(--ink-2);max-width:100%}
-.shot:hover{border-color:var(--accent)}
-.shot svg{width:30px;height:30px;stroke:var(--accent);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.shot b{font-size:14px;color:var(--ink)}
-.shot small{font-size:12px;color:var(--ink-3)}
-.shot.has{border-style:solid;padding:0}
-.shot.has img{width:100%;height:100%;object-fit:cover}
-.shot-redo{position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.65);color:#fff;font-size:12px;font-weight:600;padding:3px 9px;border-radius:99px}
-.scan-busy{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:var(--r);background:var(--info-soft)}
-.scan-busy i{width:20px;height:20px;border-radius:50%;border:3px solid var(--info);border-right-color:transparent;animation:spin .8s linear infinite;flex:none}
-.scan-busy div{display:flex;flex-direction:column;font-size:13px}
-.scan-result{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:16px;align-items:start}
-.scan-photo{width:100%;border-radius:8px;border:1px solid var(--line);object-fit:cover;max-height:260px}
-.scan-guess{display:flex;flex-direction:column;gap:6px;min-width:0}
-.guess-name{font-family:var(--f-display);font-weight:800;font-stretch:108%;font-size:24px;line-height:1.15}
-.conf{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:var(--ink-2)}
-.conf .meter{flex:1;height:6px;border-radius:9px;background:var(--sunken);overflow:hidden;max-width:160px}
-.conf .meter i{display:block;height:100%;background:var(--ok)}
-.conf .meter i.near{background:var(--warn)}
-.conf .meter i.over{background:var(--bad)}
-.confirm-q{padding:10px 12px;border-radius:var(--r);background:var(--accent-soft);font-size:13px;color:var(--ink)}
-@media (max-width:640px){.shots,.scan-result{grid-template-columns:minmax(0,1fr)}}
-.scan-modal .modal-f{position:sticky;bottom:0;z-index:2;box-shadow:0 -6px 16px rgba(0,0,0,.06)}
-@media (max-width:640px){.shot{aspect-ratio:16/9}}
+

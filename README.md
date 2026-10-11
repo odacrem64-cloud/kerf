@@ -67,14 +67,14 @@ You can also set someone up yourself: add them on the Team page and click **Crea
 Forgot a password? The owner or office opens **Team** → **Manage** on that person's card → **Reset password**.
 
 
-### 6. Turn on the AI helper and slab scanner
+### 6. Optional: turn on the AI helper
 
-Every page has a **Help** button, and Inventory has **Scan slab**. Without a key, Help answers from a built-in guide and the scanner lets you take the photo and type the details. With a key, Help answers anything in plain English and the scanner reads the slab and its sticker for you (you always confirm before it's added):
+Every page has a **Help** button. Without any setup it answers common questions from a built-in guide. To let it answer anything in plain English using Claude (pay-as-you-go, about $5 minimum):
 
 1. Create an API key at [console.anthropic.com](https://console.anthropic.com) (**API Keys** → **Create key**) and add a few dollars of credit. Each question costs a fraction of a cent.
 2. In Vercel → **Settings** → **Environment Variables**, add `ANTHROPIC_API_KEY` with that key, then redeploy.
 
-Only signed-in team members can use them, so strangers can't spend your credit. A slab scan costs about a cent or two.
+Only signed-in team members can use it, so strangers can't spend your credit.
 
 ---
 
