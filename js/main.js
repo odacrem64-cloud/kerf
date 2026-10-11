@@ -171,7 +171,7 @@ const ACTIONS = {
   /* pictures & guide */
   'my-profile': () => profileModal(),
   'gs-hide': () => { store.set(gsKey(), true); render(true); toast('Guide hidden. '); },
-  'logo-import': async () => { if (await autoImportLogo(true)) { render(true); toast('Logo imported from mwsurfaces.com'); } },
+  'logo-import': async () => { if (await autoImportLogo(true)) { render(true); toast('Midwest Surfaces logo added'); } },
   'logo-remove': async () => { await setLogo(''); render(true); toast('Logo removed'); },
   'photo-remove': async () => { await setMyPhoto(null); profileModal(); toast('Photo removed'); },
   'member-photo-remove': async (el) => { await patch('team', el.dataset.id, { photo: null }); closeModal(); toast('Photo removed'); },

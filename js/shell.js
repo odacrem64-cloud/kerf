@@ -35,7 +35,7 @@ function renderRail() {
     : null;
   rail.innerHTML = `
     ${(() => { const logo = safeImg(cfg().logo); const nm = shopName(); return logo
-      ? `<div class="brand has-logo"><img class="brand-logo" src="${logo}" alt=""><div style="min-width:0"><div class="brand-shop">${esc(nm || 'Your shop')}</div><div class="brand-sub">${esc(SHOP.app)}</div></div></div>`
+      ? `<div class="brand has-logo"><img class="brand-logo" src="${logo}" alt="${esc(nm || SHOP.name)}"><div class="brand-sub">${esc(SHOP.app)}</div></div>`
       : `<div class="brand">${BRAND}<div style="min-width:0"><div class="brand-name">${esc(nm || SHOP.name)}</div><div class="brand-sub">${esc(SHOP.city)}</div></div></div>`; })()}
     ${navFor().map((n) => (n ? `<button class="nav-item" data-act="go" data-view="${n.id}" ${act === n.id ? 'aria-current="page"' : ''}>${icon(n.icon)}<span>${n.name}</span>${counts[n.id] ? `<span class="count">${counts[n.id]}</span>` : ''}</button>` : '<div class="nav-sep"></div>')).join('')}
     <div class="rail-foot">

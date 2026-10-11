@@ -9,7 +9,7 @@ h1{font-size:22px;margin:0}h2{font-size:13px;text-transform:uppercase;letter-spa
 h3{font-size:13px;margin:12px 0 4px}table{width:100%;border-collapse:collapse}th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:#777;padding:4px 6px;border-bottom:1px solid #ccc}
 td{padding:5px 6px;border-bottom:1px solid #eee;vertical-align:top}.mono{font-variant-numeric:tabular-nums}.muted{color:#666}.r{text-align:right}
 .head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;border-bottom:3px solid #1a1a1a;padding-bottom:10px}
-.brand{display:flex;gap:12px;align-items:center}.brand img{max-height:52px;max-width:140px;object-fit:contain}
+.brand{display:flex;gap:12px;align-items:center}.brand img{max-height:64px;max-width:160px;object-fit:contain}
 .big{font-size:24px;font-weight:800;letter-spacing:.01em}.kicker{font-size:10.5px;letter-spacing:.16em;color:#888;font-weight:700}
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px 18px;margin-top:10px}.k{font-size:10.5px;color:#888;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
 .box{border:1px solid #ddd;border-radius:6px;padding:8px 10px;margin:6px 0;break-inside:avoid}.drawing{border:1px solid #eee;border-radius:6px;margin:6px 0;break-inside:avoid}
@@ -23,7 +23,7 @@ const printColor = (c) => (isHex(c) ? c : ({ 'var(--t-template)': '#2D5C9C', 'va
 function formHead(kicker, big, sub) {
   const c = cfg();
   const logo = safeImg(c.logo);
-  return `<div class="head"><div class="brand">${logo ? `<img src="${logo}" alt="">` : ''}<div><div style="font-size:18px;font-weight:800">${esc(shopName() || 'Countertop shop')}</div><div class="muted">${esc(c.shopPhone || '')}${c.shopPhone && c.shopAddress ? ' · ' : ''}${esc(c.shopAddress || '')}</div></div></div>
+  return `<div class="head"><div class="brand">${logo ? `<img src="${logo}" alt="">` : ''}<div>${logo ? '' : `<div style="font-size:18px;font-weight:800">${esc(shopName() || 'Countertop shop')}</div>`}<div class="muted">${esc(c.shopPhone || '')}${c.shopPhone && c.shopAddress ? ' · ' : ''}${esc(c.shopAddress || '')}</div></div></div>
     <div style="text-align:right"><div class="kicker">${esc(kicker)}</div><div class="big">${esc(big)}</div><div class="muted">${esc(sub)}</div></div></div>`;
 }
 const edgeList = (p) => { const e = p.edges || {}; return ['f', 'b', 'l', 'r'].filter((k) => e[k]).map((k) => ({ f: 'Front', b: 'Back', l: 'Left', r: 'Right' })[k]).join(', ') || '—'; };

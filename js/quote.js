@@ -272,10 +272,10 @@ function quoteDocHTML(job, cust, q, calc, c = cfg(), standalone = true) {
   const shop = esc(c.shopName || (typeof shopName === 'function' ? shopName() : '') || 'Your shop name');
   const body = `
 <div style="font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1a1a1a;max-width:760px;margin:0 auto;line-height:1.45">
-  <div style="display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;border-bottom:3px solid #1a1a1a;padding-bottom:14px">
-    <div style="display:flex;gap:14px;align-items:center">${safeImg(c.logo) ? `<img src="${safeImg(c.logo)}" alt="" style="max-height:64px;max-width:160px;object-fit:contain">` : ''}<div><div style="font-size:22px;font-weight:800;letter-spacing:-.01em">${shop}</div>
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:20px;border-bottom:3px solid #1a1a1a;padding-bottom:14px">
+    <div style="display:flex;gap:16px;align-items:center;flex:1;min-width:0">${safeImg(c.logo) ? `<img src="${safeImg(c.logo)}" alt="${shop}" style="max-height:86px;max-width:190px;object-fit:contain">` : ''}<div>${safeImg(c.logo) ? '' : `<div style="font-size:22px;font-weight:800;letter-spacing:-.01em">${shop}</div>`}
       <div style="color:#555;font-size:12.5px">${esc(c.shopAddress || '')}${c.shopAddress && (c.shopPhone || c.shopEmail) ? '<br>' : ''}${esc(c.shopPhone || '')}${c.shopPhone && c.shopEmail ? ' · ' : ''}${esc(c.shopEmail || '')}${c.shopWeb ? ' · ' + esc(c.shopWeb) : ''}${c.shopHours ? '<br>Showroom: ' + esc(c.shopHours) : ''}</div></div></div>
-    <div style="text-align:right"><div style="font-size:12px;letter-spacing:.14em;color:#888;font-weight:700">COUNTERTOP QUOTE</div>
+    <div style="text-align:right;flex:none"><div style="font-size:12px;letter-spacing:.14em;color:#888;font-weight:700">COUNTERTOP QUOTE</div>
       <div style="font-size:20px;font-weight:800;letter-spacing:.01em">${esc(job.number || '')}</div>
       <div style="color:#555;font-size:12.5px">${fd(d)} · valid until ${fd(valid)}</div></div>
   </div>

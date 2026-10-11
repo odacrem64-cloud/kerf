@@ -501,15 +501,16 @@ async function autoImportLogo(force = false) {
   if (!force && (safeImg(cfg().logo) || (S.settingsDoc && S.settingsDoc.logoImportTried))) return false;
   logoTried = true;
   try {
-    const r = await fetch('/api/brand-logo');
+    let r = await fetch('/brand/mws-logo.png'); // the logo that ships with the site
+    if (!r.ok) r = await fetch('/api/brand-logo'); // fallback: fetch from mwsurfaces.com
     if (!r.ok) throw new Error('not available');
     const blob = await r.blob();
     const url = await readImage(blob, { max: 360, keepPng: true });
     await setLogo(url);
-    if (!force) toast('Midwest Surfaces logo added from mwsurfaces.com. Change it in Settings if needed.', { ms: 6000 });
+    if (!force) toast('Midwest Surfaces logo added. Change it in Settings if needed.', { ms: 6000 });
     return true;
   } catch (e) {
-    if (force) toast('Couldn’t get the logo from mwsurfaces.com. Save it from the website and use Upload instead.', { bad: true, ms: 7000 });
+    if (force) toast('Couldn’t load the Midwest Surfaces logo. Use Upload instead.', { bad: true, ms: 7000 });
     else if (S.mode === 'db' && S.settingsDoc) { try { await patch('settings', S.shopId, { logoImportTried: true }); } catch (err) { /* ignore */ } }
     return false;
   }
