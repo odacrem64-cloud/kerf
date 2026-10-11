@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Kerf</title>
+<meta name="description" content="Quoting, scheduling and job tracking for countertop fabrication shops.">
+<meta name="theme-color" content="#151A18">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Kerf">
+<link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,600..900&family=Instrument+Sans:wght@400..700&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<div class="app">
+  <nav class="rail" id="rail" aria-label="Main"></nav>
+  <main class="main" id="main"></main>
+</div>
+<nav class="tabbar" id="tabbar" aria-label="Main"></nav>
+<div id="overlay"></div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<noscript><p style="padding:24px;font-family:sans-serif">Kerf needs JavaScript turned on.</p></noscript>
+<script src="/vendor/supabase-2.117.2.js"></script>
+<script src="/js/core.js"></script>
+<script src="/js/store.js"></script>
+<script src="/js/quote.js"></script>
+<script src="/js/demo.js"></script>
+<script src="/js/shell.js"></script>
+<script src="/js/views-jobs.js"></script>
+<script src="/js/views-quote.js"></script>
+<script src="/js/views-ops.js"></script>
+<script src="/js/modals.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/main.js"></script>
+</body>
+</html>
