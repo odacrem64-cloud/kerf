@@ -21,7 +21,7 @@ function newArea(name = 'Kitchen', c = cfg()) {
 function newQuote(c = cfg()) {
   return {
     areas: [newArea('Kitchen', c)], lines: [], discount: { type: 'pct', value: 0 },
-    taxRate: Number(c.taxRate) || 0, depositPct: Number(c.depositPct) || 0, minCharge: Number(c.minCharge) || 0,
+    taxRate: Number(c.taxRate) || 0, depositPct: Number(c.depositPct) || 0, payInFullUnder: Number(c.payInFullUnder) || 0, minCharge: Number(c.minCharge) || 0,
     validDays: Number(c.quoteValidDays) || 30, notes: '', createdAt: Date.now(),
   };
 }
@@ -50,11 +50,13 @@ function calcQuote(q, c = cfg()) {
   const taxable = round2(subtotal - discount);
   const tax = round2((taxable * (Number(q.taxRate) || 0)) / 100);
   const total = round2(taxable + tax);
-  const deposit = round2((total * (Number(q.depositPct) || 0)) / 100);
+  const pif = q.payInFullUnder != null ? Number(q.payInFullUnder) || 0 : Number(c.payInFullUnder) || 0;
+  const payFull = total > 0 && pif > 0 && total < pif;
+  const deposit = payFull ? total : round2((total * (Number(q.depositPct) || 0)) / 100);
   const sqft = sum(areas, (a) => a.sqft);
   const edgeLf = sum(areas, (a) => a.edgeLf);
   const nest = nestQuote(q, c);
-  return { areas, areasTotal, extras, minAdj, subtotal, discount, taxable, tax, total, deposit, sqft, edgeLf, nest };
+  return { areas, areasTotal, extras, minAdj, subtotal, discount, taxable, tax, total, deposit, payFull, pif, sqft, edgeLf, nest };
 }
 
 /* ---------- slab nesting (shelf packing with seams) ---------- */
@@ -249,7 +251,7 @@ function quoteDocHTML(job, cust, q, calc, c = cfg(), standalone = true) {
 <div style="font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1a1a1a;max-width:760px;margin:0 auto;line-height:1.45">
   <div style="display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;border-bottom:3px solid #1a1a1a;padding-bottom:14px">
     <div style="display:flex;gap:14px;align-items:center">${safeImg(c.logo) ? `<img src="${safeImg(c.logo)}" alt="" style="max-height:64px;max-width:160px;object-fit:contain">` : ''}<div><div style="font-size:22px;font-weight:800;letter-spacing:-.01em">${shop}</div>
-      <div style="color:#555;font-size:12.5px">${esc(c.shopAddress || '')}${c.shopAddress && (c.shopPhone || c.shopEmail) ? '<br>' : ''}${esc(c.shopPhone || '')}${c.shopPhone && c.shopEmail ? ' · ' : ''}${esc(c.shopEmail || '')}</div></div></div>
+      <div style="color:#555;font-size:12.5px">${esc(c.shopAddress || '')}${c.shopAddress && (c.shopPhone || c.shopEmail) ? '<br>' : ''}${esc(c.shopPhone || '')}${c.shopPhone && c.shopEmail ? ' · ' : ''}${esc(c.shopEmail || '')}${c.shopWeb ? ' · ' + esc(c.shopWeb) : ''}${c.shopHours ? '<br>Showroom: ' + esc(c.shopHours) : ''}</div></div></div>
     <div style="text-align:right"><div style="font-size:12px;letter-spacing:.14em;color:#888;font-weight:700">COUNTERTOP QUOTE</div>
       <div style="font-size:20px;font-weight:800;font-family:ui-monospace,Menlo,monospace">${esc(job.number || '')}</div>
       <div style="color:#555;font-size:12.5px">${fd(d)} · valid until ${fd(valid)}</div></div>
@@ -266,10 +268,10 @@ function quoteDocHTML(job, cust, q, calc, c = cfg(), standalone = true) {
     ${calc.discount ? tot('Discount', '−' + money2(calc.discount)) : ''}
     ${calc.tax ? tot(`Tax (${q.taxRate}%)`, money2(calc.tax)) : ''}
     ${tot('Total', money2(calc.total), true)}
-    ${calc.deposit ? tot(`Deposit due to schedule template (${q.depositPct}%)`, money2(calc.deposit)) : ''}
+    ${calc.payFull ? tot(`Paid in full before field measure (jobs under ${money(calc.pif)})`, money2(calc.total)) : calc.deposit ? tot(`${q.depositPct}% deposit before work begins · balance at installation`, money2(calc.deposit)) : ''}
   </table>
   ${q.notes ? `<div style="margin-top:22px;padding:12px 14px;background:#f6f6f4;border-radius:6px;font-size:12.5px;white-space:pre-wrap">${esc(q.notes)}</div>` : ''}
-  <div style="margin-top:22px;font-size:11.5px;color:#666">Measurements are estimates until the field template is complete; final square footage is confirmed at template. Natural stone varies in color, pattern and veining. Seam placement is reviewed with you before fabrication.</div>
+  <div style="margin-top:22px;font-size:11px;color:#555;line-height:1.5"><div style="font-weight:700;letter-spacing:.08em;font-size:10.5px;color:#888;margin-bottom:4px">TERMS</div>Measurements are estimates until the field measure is complete; final square footage is confirmed at measure.${String(c.quoteTerms || '').split(/\n+/).filter((x) => x.trim()).map((x) => `<p style="margin:5px 0">${esc(x.trim())}</p>`).join('')}</div>
   <div style="display:flex;gap:30px;margin-top:40px;font-size:12px;color:#555;flex-wrap:wrap">
     <div style="flex:1;min-width:200px;border-top:1px solid #999;padding-top:6px">Customer acceptance</div>
     <div style="width:160px;border-top:1px solid #999;padding-top:6px">Date</div>
@@ -291,6 +293,6 @@ function quoteText(job, cust, q, calc, c = cfg()) {
   if (calc.discount) lines.push(`Discount: −${money(calc.discount)}`);
   if (calc.tax) lines.push(`Tax: ${money(calc.tax)}`);
   lines.push(`Total: ${money2(calc.total)}`);
-  if (calc.deposit) lines.push(`Deposit to schedule: ${money2(calc.deposit)}`);
+  if (calc.payFull) lines.push(`Paid in full before field measure (under ${money(calc.pif)})`); else if (calc.deposit) lines.push(`${q.depositPct}% deposit: ${money2(calc.deposit)} · balance due at installation`);
   return lines.join('\n');
 }

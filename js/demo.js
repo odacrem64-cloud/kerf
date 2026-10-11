@@ -40,7 +40,7 @@ function buildDemo() {
     id: uid(), name, mat: matSnap(M[mat]), edge: edgeSnap(E[edge]), thick: '3cm', tearOut, tearPrice: c.tearOutPerSqft,
     addons: addons.map(([id, n]) => ({ id, name: A[id].name, price: A[id].price, count: n })), pieces,
   });
-  const quote = (areas, extra = {}) => ({ areas, lines: [], discount: { type: 'pct', value: 0 }, taxRate: 0, depositPct: 50, minCharge: c.minCharge, validDays: 30, notes: '', createdAt: now - 10 * DAY, ...extra });
+  const quote = (areas, extra = {}) => ({ areas, lines: [], discount: { type: 'pct', value: 0 }, taxRate: 0, depositPct: 75, payInFullUnder: 2000, minCharge: c.minCharge, validDays: 30, notes: '', createdAt: now - 10 * DAY, ...extra });
   const kitchen = (mat, edge, island = true, tear = false) => {
     const a = [area('Kitchen', mat, edge, [P('Sink run', 112.25, 25.5, 'f'), P('Range run', 64, 25.5, 'fl'), P('Backsplash', 176.25, 4, '', 'splash')], [['a1', 1], ['a3', 1], ['a2', 0]], tear)];
     if (island) a.push(area('Island', mat, edge, [P('Island', 96, 42, 'fblr')], [['a5', 2]]));
@@ -70,7 +70,7 @@ function buildDemo() {
   };
 
   addJob({ name: 'Kitchen remodel', cust: C('Ann'), stage: 'closed', age: 40, soldAt: 34, paidPct: 1, checklist: { deposit: true, layout: true, sink: true, cabinets: true, final: true },
-    quote: quote(kitchen('m6', 'e2', true, true)), acts: [['template', bizDay(-18), '09:00', '2 hrs', [T('Luis')], true], ['install', bizDay(-9), '08:00', 'Full day', [T('Ray'), T('Tony')], true], ['service', bizDay(2), '13:00', '1 hr', [T('Ray')], false, 'Polish small chip at sink corner — warranty']],
+    quote: quote(kitchen('m6', 'e8', true, true)), acts: [['template', bizDay(-18), '09:00', '2 hrs', [T('Luis')], true], ['install', bizDay(-9), '08:00', 'Full day', [T('Ray'), T('Tony')], true], ['service', bizDay(2), '13:00', '1 hr', [T('Ray')], false, 'Polish small chip at sink corner — warranty']],
     notes: [['note', 'Customer loves it. Asked for a review card.', T('Mike'), 8]] });
   addJob({ name: 'Two hall & primary vanities', cust: C('Priya'), stage: 'installed', age: 24, soldAt: 19, paidPct: 0.5, checklist: { deposit: true, layout: true, sink: true, cabinets: true },
     quote: quote([area('Primary bath', 'm4', 'e1', [P('Double vanity', 72.5, 22.5, 'fl')], [['a9', 2], ['a3', 2]]), area('Hall bath', 'm4', 'e1', [P('Vanity', 48, 22.5, 'f'), P('Side splash', 22.5, 4, '', 'splash')], [['a9', 1], ['a3', 1]])]),
@@ -85,7 +85,7 @@ function buildDemo() {
     quote: quote(kitchen('m1', 'e1', true)), acts: [['template', bizDay(-1), '07:30', '1 hr', [T('Luis')], true], ['fabrication', bizDay(4), '', 'Full day', [T('Sam')]]],
     notes: [['issue', 'Island cabinets out of level by 3/8" at the back — super said they will shim before install.', T('Luis'), 1]] });
   addJob({ name: 'Kitchen refresh', cust: C('Jordan'), stage: 'sold', age: 12, soldAt: 3, checklist: { deposit: true }, paidPct: 0.5,
-    quote: quote(kitchen('m5', 'e2', false, true)), acts: [['template', bizDay(1), '10:00', '2 hrs', [T('Luis')]]] });
+    quote: quote(kitchen('m5', 'e8', false, true)), acts: [['template', bizDay(1), '10:00', '2 hrs', [T('Luis')]]] });
   addJob({ name: 'Laundry + powder room', cust: C('Barbara'), stage: 'sold', age: 9, soldAt: 2,
     quote: quote([area('Laundry', 'm2', 'e1', [P('Folding counter', 70, 25.5, 'fr')], [['a1', 1]]), area('Powder room', 'm2', 'e1', [P('Vanity', 31, 19, 'f')], [['a9', 1], ['a3', 1]])]) });
   addJob({ name: 'Whitfield residence kitchen', cust: C('Tasha'), stage: 'quoted', age: 13, quotedAt: 11, source: 'Designer', sales: T('Mike'),

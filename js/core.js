@@ -120,7 +120,7 @@ const stageIdx = (id) => STAGES.findIndex((s) => s.id === id);
 const stageColor = (id) => `var(--s-${id})`;
 const stagePill = (id) => `<span class="pill" style="--c:${stageColor(id)}">${esc(stageName(id))}</span>`;
 
-const SHOP = { name: 'Midwest Surfaces', city: 'Mokena, IL', app: 'Shop Manager' };
+const SHOP = { name: 'Midwest Surfaces', city: 'Frankfort, IL', app: 'Shop Manager' };
 const BASE_ACT_TYPES = [
   { id: 'template', name: 'Template', color: 'var(--t-template)', base: true },
   { id: 'fabrication', name: 'Fabrication', color: 'var(--t-fab)', base: true },
@@ -141,58 +141,90 @@ const ACT_STATUS = [{ id: 'estimate', name: 'Estimate' }, { id: 'scheduled', nam
 const actStatusName = (s) => (ACT_STATUS.find((x) => x.id === s) || ACT_STATUS[1]).name;
 const THICKNESS = ['3cm', '2cm', '1.2cm', '4cm', 'Other'];
 const fmtBytes = (n) => { n = Number(n) || 0; return n < 1024 ? n + ' B' : n < 1048576 ? Math.round(n / 1024) + ' KB' : (n / 1048576).toFixed(n < 10485760 ? 1 : 0) + ' MB'; };
-const DURATIONS = ['', '1 hr', '2 hrs', '3 hrs', 'Half day', 'Full day', '2 days'];
+const DURATIONS = ['', 'AM window 9–1', 'PM window 1–5', '1 hr', '2 hrs', '3 hrs', '3–5 hrs', 'Half day', 'Full day', '2 days'];
 const ROLES = ['Owner', 'Office', 'Sales', 'Templater', 'Fabricator', 'Installer', 'Helper'];
-const SOURCES = ['Walk-in', 'Builder', 'Designer', 'Cabinet shop', 'Referral', 'Website', 'Home show', 'Repeat customer'];
+const SOURCES = ['Showroom walk-in', 'Website', 'Facebook', 'Instagram', 'Builder', 'Designer', 'Cabinet shop', 'Referral', 'Repeat customer', 'Home show'];
 const CUST_TYPES = ['Homeowner', 'Builder', 'Designer', 'Cabinet shop', 'Commercial'];
+/* Midwest Surfaces' own requirements before measure and install */
 const CHECKS = [
-  { id: 'deposit', name: 'Deposit received' },
-  { id: 'layout', name: 'Layout & seams approved by customer' },
-  { id: 'sink', name: 'Sink & faucet on site' },
-  { id: 'cabinets', name: 'Cabinets set & level' },
-  { id: 'final', name: 'Final payment collected' },
+  { id: 'deposit', name: 'Deposit in (75%, or paid in full under $2,000)' },
+  { id: 'cabinets', name: 'Cabinets in final spot & screwed to the wall' },
+  { id: 'sink', name: 'Sink & appliances on site (farm sink installed)' },
+  { id: 'cleared', name: 'Countertops cleared for measure' },
+  { id: 'layout', name: 'Field measure ticket signed (no changes after)' },
+  { id: 'supports', name: 'Overhang supports in place (over 8")' },
+  { id: 'final', name: 'Balance collected at install' },
 ];
 const PAY_METHODS = ['Check', 'Card', 'Cash', 'ACH / transfer', 'Financing'];
 const MEMBER_COLORS = ['#B33B0B', '#2D5C9C', '#0F7C80', '#7650AD', '#2D7A4C', '#A86C12', '#BE3328', '#5149B8', '#4F5A55', '#9C3D7A'];
 const AREA_PRESETS = ['Kitchen', 'Island', 'Vanity', 'Bar top', 'Laundry', 'Fireplace', 'Outdoor kitchen', 'Shower curb & niche'];
 
+/* Midwest Surfaces — details from mwsurfaces.com (Oct 2026). Prices are starter numbers: set the real ones in Settings. */
+const MWS_TERMS = `Before we measure: cabinets must be in their final position and securely screwed to the wall. Sinks and appliances must be on site (farm sinks fully installed). Countertops must be completely cleared. The field measure ticket must be signed; no changes of any kind are accepted after sign-off. Missing items or a return visit carry a $150 trip charge.
+Installation: arrival is a window (9 AM–1 PM or 1 PM–5 PM), not a set time, with one appointment per project. Overhangs over 8" need supports installed before installation (not provided by Midwest Surfaces). Pets or children sensitive to chemicals should not be on site. Cutouts and faucet holes create dust.
+Plumbing: we do not reconnect plumbing, faucets or appliances. Wait until the next day to reconnect plumbing, and don't use the sink or dishwasher until the silicone has cured.
+Tear-out is optional and not included unless listed on this quote.
+Payment: jobs over $2,000 require a 75% deposit before work begins, balance due at installation. Jobs under $2,000 are paid in full before field measure. Past-due balances accrue interest; a late charge applies after 30 days.
+Natural stone varies in color, pattern and veining. Seam placement is reviewed with you before fabrication.`;
 const DEFAULT_SETTINGS = {
-  shopName: 'Midwest Surfaces', shopPhone: '', shopEmail: '', shopAddress: 'Mokena, IL', logo: '', activityTypes: [],
-  taxRate: 0, depositPct: 50, minCharge: 1200, tearOutPerSqft: 8, quoteValidDays: 30,
+  shopName: 'Midwest Surfaces', shopPhone: '(815) 671-8990', shopEmail: '', shopAddress: '21950 LaGrange Road, Unit B, Frankfort, IL',
+  shopHours: 'Mon–Fri 10–4 · Sat 9–2 · Sun closed', shopWeb: 'mwsurfaces.com', logo: '',
+  activityTypes: [
+    { id: 'at_saw_baca', name: 'Saw – Baca SawJet', color: '#5149B8' },
+    { id: 'at_saw_dona', name: 'Saw – Donatoni Jet', color: '#9C3D7A' },
+    { id: 'at_delivery', name: 'Delivery', color: '#0F7C80' },
+  ],
+  taxRate: 0, depositPct: 75, payInFullUnder: 2000, tripCharge: 150, minCharge: 1200, tearOutPerSqft: 8, quoteValidDays: 30,
+  quoteTerms: MWS_TERMS,
   slabL: 126, slabW: 63,
   capInstallSqft: 160, capTemplates: 4,
   materials: [
     { id: 'm1', group: 'Granite', name: 'Granite – Level 1', price: 42, color: '#8C8077' },
     { id: 'm2', group: 'Granite', name: 'Granite – Level 2', price: 52, color: '#5F5650' },
-    { id: 'm3', group: 'Granite', name: 'Granite – Level 3', price: 64, color: '#38332F' },
+    { id: 'm3', group: 'Granite', name: 'Granite – Level 3 (exotic)', price: 64, color: '#38332F' },
     { id: 'm4', group: 'Quartz', name: 'Quartz – Group A', price: 55, color: '#E5E2DC' },
     { id: 'm5', group: 'Quartz', name: 'Quartz – Group B', price: 66, color: '#D8D4CC' },
     { id: 'm6', group: 'Quartz', name: 'Quartz – Group C (Calacatta looks)', price: 79, color: '#F1EEE8' },
     { id: 'm7', group: 'Quartzite', name: 'Quartzite', price: 95, color: '#CDC5B7' },
     { id: 'm8', group: 'Marble', name: 'Marble', price: 88, color: '#ECEAE5' },
-    { id: 'm9', group: 'Porcelain', name: 'Porcelain slab', price: 72, color: '#C8C5BF' },
-    { id: 'm10', group: 'Solid surface', name: 'Solid surface', price: 45, color: '#DAD6CE' },
+    { id: 'm11', group: 'Dolomite', name: 'Dolomite', price: 85, color: '#E8E6E1' },
+    { id: 'm9', group: 'Porcelain', name: 'Porcelain', price: 72, color: '#C8C5BF' },
   ],
   edges: [
-    { id: 'e1', name: 'Eased (standard)', price: 0 },
-    { id: 'e2', name: 'Pencil round', price: 0 },
-    { id: 'e3', name: 'Half bullnose', price: 8 },
-    { id: 'e4', name: 'Bevel', price: 10 },
-    { id: 'e5', name: 'Full bullnose', price: 16 },
+    { id: 'e1', name: 'Eased', price: 0 },
+    { id: 'e8', name: '1/4" Radius', price: 0 },
+    { id: 'e4', name: 'Beveled', price: 10 },
+    { id: 'e3', name: 'Half Bullnose', price: 8 },
+    { id: 'e5', name: 'Bullnose', price: 16 },
     { id: 'e6', name: 'Ogee', price: 24 },
-    { id: 'e7', name: 'Mitered drop edge', price: 38 },
+    { id: 'e9', name: 'Dupont', price: 26 },
+    { id: 'e10', name: 'Cove Dupont', price: 30 },
+    { id: 'e7', name: 'Miter', price: 38 },
+    { id: 'e11', name: 'Lamination', price: 32 },
+    { id: 'e12', name: 'Waterfall', price: 40 },
   ],
   addons: [
     { id: 'a1', name: 'Undermount sink cutout', price: 0 },
-    { id: 'a2', name: 'Cooktop cutout', price: 150 },
     { id: 'a3', name: 'Faucet hole', price: 0 },
+    { id: 'a2', name: 'Cooktop cutout', price: 150 },
     { id: 'a4', name: 'Extra drill hole', price: 25 },
     { id: 'a5', name: 'Outlet cutout', price: 35 },
     { id: 'a6', name: 'Radius corner', price: 45 },
-    { id: 'a7', name: 'SS sink – single bowl', price: 249 },
-    { id: 'a8', name: 'SS sink – 50/50', price: 279 },
-    { id: 'a9', name: 'Vanity bowl', price: 110 },
+    { id: 'a11', name: 'Farm sink notch', price: 125 },
     { id: 'a10', name: 'Waterfall leg', price: 350 },
+    { id: 'a7', name: 'Sink – SS single bowl 3219 (16 ga)', price: 249 },
+    { id: 'a8', name: 'Sink – SS double 50/50 3219 (16 ga)', price: 279 },
+    { id: 'a12', name: 'Sink – SS single bowl 2318 (16 ga)', price: 229 },
+    { id: 'a13', name: 'Sink – SS double 50/50 3118 (18 ga)', price: 199 },
+    { id: 'a14', name: 'Sink – SS single bowl 3018 (18 ga, bar/laundry)', price: 179 },
+    { id: 'a15', name: 'Sink – SS double 60/40 3120S (18 ga)', price: 209 },
+    { id: 'a16', name: 'Sink – SS workstation 3319 (16 ga)', price: 449 },
+    { id: 'a17', name: 'Sink – Quartz composite QU-670', price: 329 },
+    { id: 'a18', name: 'Sink – Quartz composite QU-810', price: 359 },
+    { id: 'a19', name: 'Sink – Quartz composite QU-811', price: 359 },
+    { id: 'a9', name: 'Vanity sink – white rectangle porcelain 2015', price: 110 },
+    { id: 'a20', name: 'Vanity sink – white oval porcelain 1714', price: 95 },
+    { id: 'a21', name: 'Trip charge (return visit)', price: 150 },
   ],
 };
 

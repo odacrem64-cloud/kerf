@@ -383,6 +383,8 @@ function attention(job) {
   if (job.stage === 'lead' && Date.now() - (job.createdAt || Date.now()) > 3 * 86400000) out.push({ level: 'warn', text: 'Lead waiting on a quote' });
   if (job.stage === 'quoted' && days >= 7) out.push({ level: 'warn', text: `Quote sent ${days} days ago — follow up` });
   if (stageIdx(job.stage) >= stageIdx('sold') && !(job.checklist || {}).deposit && paidOf(job) <= 0 && job.stage !== 'installed') out.push({ level: 'warn', text: 'No deposit recorded' });
+  const pifUnder = Number(cfg().payInFullUnder) || 0;
+  if (['sold', 'templated'].includes(job.stage) && job.total > 0 && pifUnder && job.total < pifUnder && paidOf(job) < job.total - 0.5) out.push({ level: 'warn', text: `Under ${money(pifUnder)} — collect full payment before measure` });
   if (job.stage === 'sold' && !has('template')) out.push({ level: 'bad', text: 'Sold — template not scheduled' });
   if ((job.stage === 'templated' || job.stage === 'fabrication') && !has('install')) out.push({ level: 'bad', text: 'Install not scheduled' });
   for (const a of acts) if (a.status !== 'done' && a.date < t) out.push({ level: 'bad', text: `${actType(a.type).name} on ${fmtDshort(a.date)} not marked done` });
@@ -491,6 +493,26 @@ async function setMyPhoto(photo) {
   if (S.mode !== 'db') { await patch('team', S.me, { photo }); return; }
   applyLocal('team', S.me, 'patch', { photo });
   try { await sbRun(() => SB.rpc('kerf_set_my_photo', { sid: S.shopId, photo })); } catch (e) { reportErr(e); }
+}
+/* First time the owner or office opens the app: bring in the logo from mwsurfaces.com */
+let logoTried = false;
+async function autoImportLogo(force = false) {
+  if ((!force && logoTried) || !isAdmin() || !S.canWrite) return false;
+  if (!force && (safeImg(cfg().logo) || (S.settingsDoc && S.settingsDoc.logoImportTried))) return false;
+  logoTried = true;
+  try {
+    const r = await fetch('/api/brand-logo');
+    if (!r.ok) throw new Error('not available');
+    const blob = await r.blob();
+    const url = await readImage(blob, { max: 360, keepPng: true });
+    await setLogo(url);
+    if (!force) toast('Midwest Surfaces logo added from mwsurfaces.com. Change it in Settings if needed.', { ms: 6000 });
+    return true;
+  } catch (e) {
+    if (force) toast('Couldn’t get the logo from mwsurfaces.com. Save it from the website and use Upload instead.', { bad: true, ms: 7000 });
+    else if (S.mode === 'db' && S.settingsDoc) { try { await patch('settings', S.shopId, { logoImportTried: true }); } catch (err) { /* ignore */ } }
+    return false;
+  }
 }
 async function setLogo(logo) {
   const cur = cfg();

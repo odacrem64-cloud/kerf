@@ -1,6 +1,6 @@
 # Midwest Surfaces — Shop Manager
 
-Quoting, scheduling, job tracking and slab inventory for **Midwest Surfaces** in Mokena, Illinois. This site is built for one shop: after the owner login is created, no one else can set up a different company here. Employees join with the shop code and the office approves them.
+Quoting, scheduling, job tracking and slab inventory for **Midwest Surfaces** — 21950 LaGrange Road, Unit B, Frankfort, IL (serving Mokena, Frankfort, New Lenox and the south suburbs). This site is built for one shop: after the owner login is created, no one else can set up a different company here. Employees join with the shop code and the office approves them.
 
 - **Quote builder** — measure in inches (fractions OK), pick stone, edges, sinks and cutouts. It draws the pieces to scale, works out square feet, edge footage, slabs and seams, and prices it as you type. Print or save the customer copy as a PDF.
 - **Job board** — Lead → Quoted → Sold → Templated → In fabrication → Installed → Closed, with drag and drop and flags for anything stuck.
@@ -12,6 +12,7 @@ Quoting, scheduling, job tracking and slab inventory for **Midwest Surfaces** in
 - **Accounts & contacts** — builders, dealers and homeowners, each with their contacts, plus an on-site contact per job.
 - **Moraware-style scheduling** — Estimate / Confirmed / Complete activities, your own activity types (Saw, CNC, Polish…), and a calendar by crew member.
 - **Printable forms** — a job sheet for the shop floor and a day packet for each crew member.
+- **Set up for Midwest Surfaces** — address, phone and showroom hours on every quote; their 11 edge profiles and sink lineup from mwsurfaces.com; their 75% deposit / pay-in-full-under-$2,000 rule; their measure and install terms printed on quotes; pre-measure checklist; AM/PM install windows; saw activity types for the Baca SawJet and Donatoni Jet.
 - **Your logo** on the menu and on every quote, **profile photos** for the crew, and a **Help** button with an AI helper.
 
 Everyone signs in with their own email and password. Crew logins only see their schedule and job details, not prices or money.

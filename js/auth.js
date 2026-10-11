@@ -161,6 +161,7 @@ async function openShop(m) {
   startRealtime();
   S.view = isCrew() ? 'mywork' : 'dashboard'; S.params = {};
   render(true);
+  setTimeout(() => autoImportLogo(), 800);
 }
 let pendingTimer = null;
 function startPendingPoll() { stopPendingPoll(); pendingTimer = setInterval(() => { if (S.auth.screen === 'pending' && !document.hidden) routeAfterSignIn(S.pendingShop); }, 20000); }

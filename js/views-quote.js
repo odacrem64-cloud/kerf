@@ -101,10 +101,11 @@ function quoteTermsHTML(q) {
       <label class="field"><span>Discount</span><div style="display:flex;gap:6px"><div class="seg">${[['pct', '%'], ['amt', '$']].map(([k, l]) => `<button type="button" data-act="q-disc-type" data-v="${k}" aria-pressed="${q.discount.type === k}">${l}</button>`).join('')}</div><input class="input mono right" id="q-disc" inputmode="decimal" value="${q.discount.value || ''}" placeholder="0" data-q="disc"></div></label>
       <label class="field"><span>Sales tax %</span><input class="input mono right" id="q-tax" inputmode="decimal" value="${q.taxRate || ''}" placeholder="0" data-q="tax"></label>
       <label class="field"><span>Deposit %</span><input class="input mono right" id="q-dep" inputmode="decimal" value="${q.depositPct || ''}" placeholder="0" data-q="dep"></label>
+      <label class="field"><span>Pay in full if under $</span><input class="input mono right" id="q-pif" inputmode="decimal" value="${q.payInFullUnder != null ? q.payInFullUnder : cfg().payInFullUnder || ''}" placeholder="0" data-q="pif"></label>
       <label class="field"><span>Minimum job charge</span><input class="input mono right" id="q-min" inputmode="decimal" value="${q.minCharge || ''}" placeholder="0" data-q="min"></label>
       <label class="field"><span>Quote good for (days)</span><input class="input mono right" id="q-valid" inputmode="numeric" value="${q.validDays || ''}" data-q="valid"></label>
     </div>
-    <label class="field"><span>Notes on the customer copy</span><textarea class="input" id="q-notes" data-q="notes" placeholder="Includes one undermount sink cutout and faucet hole. Plumbing disconnect and reconnect by others.">${esc(q.notes || '')}</textarea></label>
+    <label class="field"><span>Notes on the customer copy</span><textarea class="input" id="q-notes" data-q="notes" placeholder="Includes one undermount sink cutout and faucet hole. Our standard terms print below this.">${esc(q.notes || '')}</textarea></label>
   </div></div>`;
 }
 function quoteEditorHTML() {
@@ -123,7 +124,8 @@ function totalsHTML(q, calc) {
   if (calc.discount) h += L('Discount', '−' + money2(calc.discount));
   if (calc.tax) h += L(`Tax ${q.taxRate}%`, money2(calc.tax));
   h += `<div class="grand"><span class="eyebrow">Total</span><b class="num">${money2(calc.total)}</b></div>`;
-  if (calc.deposit) h += L(`Deposit due (${q.depositPct}%)`, money2(calc.deposit));
+  if (calc.payFull) h += L(`Under ${money(calc.pif)}: paid in full before measure`, money2(calc.total));
+  else if (calc.deposit) h += L(`Deposit due (${q.depositPct}%)`, money2(calc.deposit));
   return h;
 }
 function slabsHTML(calc) {
@@ -219,6 +221,7 @@ function quoteInput(el, final) {
     case 'disc': q.discount.value = num(el.value); quoteRecalc('-'); return;
     case 'tax': q.taxRate = num(el.value); quoteRecalc('-'); return;
     case 'dep': q.depositPct = clamp(num(el.value), 0, 100); quoteRecalc('-'); return;
+    case 'pif': q.payInFullUnder = Math.max(0, num(el.value)); quoteRecalc('-'); return;
     case 'min': q.minCharge = num(el.value); quoteRecalc('-'); return;
     case 'valid': q.validDays = Math.round(num(el.value)) || 30; d.dirty = true; quoteRefreshHeader(); return;
     case 'notes': q.notes = el.value; d.dirty = true; quoteRefreshHeader(); return;
