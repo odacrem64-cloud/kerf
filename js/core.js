@@ -261,6 +261,7 @@ const ICONS = {
   print: '<path d="M7 9V3h10v6M7 17H4v-7h16v7h-3"/><rect x="7" y="14" width="10" height="7"/>',
   camera: '<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
   refresh: '<path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/>',
+  robot: '<path d="M12 6.5V4"/><circle cx="12" cy="3" r="1.3"/><rect x="4.5" y="6.5" width="15" height="12" rx="4"/><circle cx="9.3" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="14.7" cy="12" r="1.5" fill="currentColor" stroke="none"/><path d="M9.8 15.6h4.4M2.5 11v3.5M21.5 11v3.5M8.5 21h7"/>',
   help: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.3a2.6 2.6 0 0 1 5 .9c0 1.7-2.5 2.2-2.5 3.8M12 17.2v.01"/>',
 };
 const icon = (n, extra = '') => `<svg viewBox="0 0 24 24" aria-hidden="true" ${extra}>${ICONS[n] || ''}</svg>`;

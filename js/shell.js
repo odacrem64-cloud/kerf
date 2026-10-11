@@ -68,7 +68,7 @@ function topbarHTML(r) {
   const crumb = r.crumb ? `<span class="crumb">${r.crumb}</span>` : '';
   const back = r.back ? `<button class="btn icon ghost" data-act="go" data-view="${r.back.view}" ${r.back.id ? `data-id="${esc(r.back.id)}"` : ''} aria-label="Back">${icon('back')}</button>` : '';
   const newBtn = r.noNew || !S.canWrite || isCrew() ? '' : `<button class="btn primary" data-act="new-job">${icon('plus')}<span class="lbl">New quote</span></button>`;
-  return `<header class="topbar">${back}<h1>${crumb}${r.title}</h1>${r.actions || ''}<button class="search-btn" data-act="palette" aria-label="Search jobs and customers">${icon('search')}<span class="lbl">Search jobs, customers</span><kbd>${IS_MAC ? '⌘K' : 'Ctrl K'}</kbd></button><button class="btn icon help-top" data-act="help-open" aria-label="AI Shop Assistant" title="AI Shop Assistant">${icon('help')}</button>${newBtn}</header>`;
+  return `<header class="topbar">${back}<h1>${crumb}${r.title}</h1>${r.actions || ''}<button class="search-btn" data-act="palette" aria-label="Search jobs and customers">${icon('search')}<span class="lbl">Search jobs, customers</span><kbd>${IS_MAC ? '⌘K' : 'Ctrl K'}</kbd></button><button class="btn icon help-top" data-act="help-open" aria-label="AI Shop Assistant" title="AI Shop Assistant">${icon('robot')}</button>${newBtn}</header>`;
 }
 function skeletonHTML() {
   return `<header class="topbar"><h1>Loading your shop…</h1></header><div class="skeleton" aria-busy="true"><i></i><i style="height:120px"></i><i style="height:220px"></i></div>`;

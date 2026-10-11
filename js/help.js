@@ -26,11 +26,11 @@ function renderHelp() {
   if (!box) return;
   if (S.auth.screen) { box.innerHTML = ''; return; }
   const sug = isCrew() ? SUGGEST.crew : SUGGEST.other;
-  if (!H.open) { box.innerHTML = `<button class="help-fab" data-act="help-open" aria-label="Open the AI Shop Assistant">${icon('help')}<span>AI Shop Assistant</span></button>`; return; }
+  if (!H.open) { box.innerHTML = `<button class="help-fab" data-act="help-open" aria-label="Open the AI Shop Assistant">${icon('robot')}<span>AI Shop Assistant</span></button>`; return; }
   const msgs = H.msgs.length ? H.msgs.map((m) => `<div class="hmsg ${m.role}">${m.role === 'assistant' ? mdLite(m.content) : esc(m.content)}${m.related && m.related.length ? `<div class="hrel">${m.related.map((r) => `<button class="chip" data-act="help-ask" data-q="${esc(r)}">${esc(r)}</button>`).join('')}</div>` : ''}</div>`).join('')
     : `<div class="hmsg assistant">Hi${member(S.me) ? ' ' + esc(member(S.me).name.split(' ')[0]) : ''}! Ask me how to do anything in the shop app.${aiOn() ? '' : ' <span class="faint">(Quick answers mode)</span>'}</div>`;
   box.innerHTML = `<aside class="help-panel" role="dialog" aria-label="AI Shop Assistant">
-    <div class="help-h">${icon('help')}<b>AI Shop Assistant</b><button class="btn icon ghost" data-act="help-close" aria-label="Close the AI Shop Assistant">${icon('close')}</button></div>
+    <div class="help-h">${icon('robot')}<b>AI Shop Assistant</b><button class="btn icon ghost" data-act="help-close" aria-label="Close the AI Shop Assistant">${icon('close')}</button></div>
     <div class="help-b" id="help-b">${msgs}${H.busy ? '<div class="hmsg assistant typing"><i></i><i></i><i></i></div>' : ''}
       ${H.msgs.length ? '' : `<div class="hrel">${sug.map((q) => `<button class="chip" data-act="help-ask" data-q="${esc(q)}">${esc(q)}</button>`).join('')}</div>`}</div>
     <form class="help-f" data-help-form><input class="input" id="help-q" placeholder="How do I…" autocomplete="off" maxlength="500"><button class="btn primary" type="submit" ${H.busy ? 'disabled' : ''}>Ask</button></form>
