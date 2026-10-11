@@ -262,9 +262,9 @@ function quoteDocHTML(job, cust, q, calc, c = cfg(), standalone = true) {
     if (ac.edgeLf > 0) rows += row(`Edge profile: ${esc(a.edge ? a.edge.name : '')}`, ac.edgeLf.toFixed(1) + ' LF', a.edge && a.edge.price ? money2(a.edge.price) : 'Included', ac.edgeCost ? money2(ac.edgeCost) : '—');
     for (const x of a.addons || []) if (x.count) rows += row(esc(x.name), String(x.count), x.price ? money2(x.price) : 'Included', x.price ? money2(x.price * x.count) : '—');
     if (a.tearOut) rows += row('Remove & dispose of existing tops', sqft1(ac.sqft) + ' sq ft', money2(a.tearPrice), money2(ac.tearCost));
-    areasHTML += `<h3 style="font-size:14px;margin:22px 0 6px;text-transform:uppercase;letter-spacing:.06em">${esc(a.name)}<span style="float:right;font-weight:600;letter-spacing:0;text-transform:none">${money2(ac.total)}</span></h3>`;
+    areasHTML += `<section style="break-inside:avoid;page-break-inside:avoid"><h3 style="font-size:14px;margin:22px 0 6px;text-transform:uppercase;letter-spacing:.06em">${esc(a.name)}<span style="float:right;font-weight:600;letter-spacing:0;text-transform:none">${money2(ac.total)}</span></h3>`;
     areasHTML += `<table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr style="color:#888;font-size:11px;text-transform:uppercase;letter-spacing:.05em"><th style="text-align:left;padding:4px 8px;font-weight:600">Item</th><th style="text-align:right;padding:4px 8px;font-weight:600">Qty</th><th style="text-align:right;padding:4px 8px;font-weight:600">Rate</th><th style="text-align:right;padding:4px 8px;font-weight:600">Amount</th></tr></thead><tbody>${rows}</tbody></table>`;
-    areasHTML += `<div style="margin:10px 0 0;border:1px solid #eee;border-radius:6px;background:#fafaf8">${areaSVG(a, PAL_DOC, 640, 'dst-')}</div>`;
+    areasHTML += `<div style="margin:10px 0 0;border:1px solid #eee;border-radius:6px;background:#fafaf8">${areaSVG(a, PAL_DOC, 640, 'dst-')}</div></section>`;
   });
   let extras = '';
   for (const l of q.lines || []) extras += row(esc(l.desc || 'Additional item'), '', '', money2(l.amount));
@@ -285,6 +285,7 @@ function quoteDocHTML(job, cust, q, calc, c = cfg(), standalone = true) {
   </div>
   ${areasHTML}
   ${extras ? `<h3 style="font-size:14px;margin:22px 0 6px;text-transform:uppercase;letter-spacing:.06em">Additional items</h3><table style="width:100%;border-collapse:collapse;font-size:12.5px"><tbody>${extras}</tbody></table>` : ''}
+  <div style="break-inside:avoid;page-break-inside:avoid">
   <table style="width:300px;margin:22px 0 0 auto;border-collapse:collapse;font-size:13px">
     ${calc.minAdj ? tot('Minimum job charge adjustment', money2(calc.minAdj)) : ''}
     ${tot('Subtotal', money2(calc.subtotal))}
@@ -294,11 +295,13 @@ function quoteDocHTML(job, cust, q, calc, c = cfg(), standalone = true) {
     ${calc.payFull ? tot(`Paid in full before field measure (jobs under ${money(calc.pif)})`, money2(calc.total)) : calc.deposit ? tot(`${q.depositPct}% deposit before work begins · balance at installation`, money2(calc.deposit)) : ''}
   </table>
   ${q.notes ? `<div style="margin-top:22px;padding:12px 14px;background:#f6f6f4;border-radius:6px;font-size:12.5px;white-space:pre-wrap">${esc(q.notes)}</div>` : ''}
-  <div style="margin-top:22px;font-size:11px;color:#555;line-height:1.5"><div style="font-weight:700;letter-spacing:.08em;font-size:10.5px;color:#888;margin-bottom:4px">TERMS</div>Measurements are estimates until the field measure is complete; final square footage is confirmed at measure.${String(c.quoteTerms || '').split(/\n+/).filter((x) => x.trim()).map((x) => `<p style="margin:5px 0">${esc(x.trim())}</p>`).join('')}</div>
-  <div style="display:flex;gap:30px;margin-top:40px;font-size:12px;color:#555;flex-wrap:wrap">
-    <div style="flex:1;min-width:200px;border-top:1px solid #999;padding-top:6px">Customer acceptance</div>
+  <div style="display:flex;gap:30px;margin-top:34px;font-size:12px;color:#555;flex-wrap:wrap">
+    <div style="flex:1;min-width:200px;border-top:1px solid #999;padding-top:6px">Customer acceptance — I accept this quote and the terms below</div>
     <div style="width:160px;border-top:1px solid #999;padding-top:6px">Date</div>
   </div>
+  </div>
+  <div style="margin-top:22px;font-size:11px;color:#555;line-height:1.5"><div style="font-weight:700;letter-spacing:.08em;font-size:10.5px;color:#888;margin-bottom:4px">TERMS</div>Measurements are estimates until the field measure is complete; final square footage is confirmed at measure.${String(c.quoteTerms || '').split(/\n+/).filter((x) => x.trim()).map((x) => `<p style="margin:5px 0">${esc(x.trim())}</p>`).join('')}</div>
+
 </div>`;
   if (!standalone) return body;
   return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Quote ${esc(job.number || '')} — ${esc(cust ? cust.name : '')}</title><style>@media print{body{margin:0}}</style></head><body style="margin:0;padding:28px;background:#fff">${body}</body></html>`;
