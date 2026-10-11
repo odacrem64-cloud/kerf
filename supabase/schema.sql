@@ -177,6 +177,23 @@ drop function if exists public.kerf_is_staff();
 drop function if exists public.kerf_is_admin();
 drop function if exists public.kerf_access();
 
+-- ---------- Profile photos: each person can change their own picture on the team list ----------
+create or replace function public.kerf_set_my_photo(sid text, photo text) returns void
+language plpgsql security definer set search_path = public as $$
+declare tid text;
+begin
+  if photo is not null and (length(photo) > 120000 or photo !~ '^data:image/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$') then
+    raise exception 'Use a smaller JPG or PNG' using errcode = '22023';
+  end if;
+  select team_id into tid from public.members where user_id = auth.uid() and shop_id = sid and active and status = 'active';
+  if tid is null then
+    raise exception 'You are not on this shop''s team' using errcode = '42501';
+  end if;
+  update public.team set data = jsonb_set(data, '{photo}', coalesce(to_jsonb(photo), 'null'::jsonb)) where id = tid and shop_id = sid;
+end $$;
+revoke execute on function public.kerf_set_my_photo(text, text) from public, anon;
+grant execute on function public.kerf_set_my_photo(text, text) to authenticated;
+
 -- ---------- Permissions ----------
 revoke all on public.shops, public.members, public.jobs, public.activities, public.customers, public.team, public.notes, public.settings from anon;
 grant select, update on public.shops to authenticated;

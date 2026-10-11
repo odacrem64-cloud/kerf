@@ -165,6 +165,13 @@ const ACTIONS = {
     quoteRerender(); toast('Repriced from your current price list');
   },
 
+  /* pictures & guide */
+  'my-profile': () => profileModal(),
+  'gs-hide': () => { store.set(gsKey(), true); render(true); toast('Guide hidden. The helper (?) can bring you back to any step.'); },
+  'logo-remove': async () => { await setLogo(''); render(true); toast('Logo removed'); },
+  'photo-remove': async () => { await setMyPhoto(null); profileModal(); toast('Photo removed'); },
+  'member-photo-remove': async (el) => { await patch('team', el.dataset.id, { photo: null }); closeModal(); toast('Photo removed'); },
+
   /* settings */
   's-add': (el) => { const s = ensureSDraft(); const l = el.dataset.l; const item = l === 'materials' ? { id: uid(), name: '', group: '', price: 0, color: '#CCCCCC' } : { id: uid(), name: '', price: 0 }; s[l].push(item); s._dirty = true; render(true); const ids = { materials: 'sm-n-', edges: 'sedges-n-', addons: 'saddons-n-' }; const f = document.getElementById(ids[l] + (s[l].length - 1)); if (f) f.focus(); },
   's-del': (el) => { const s = ensureSDraft(); s[el.dataset.l].splice(+el.dataset.i, 1); s._dirty = true; render(true); },
@@ -218,6 +225,26 @@ document.addEventListener('input', (e) => {
 document.addEventListener('change', async (e) => {
   const el = e.target;
   if (!el || !el.dataset) return;
+  if (el.dataset.upload && el.files && el.files[0]) {
+    const kind = el.dataset.upload, file = el.files[0];
+    el.value = '';
+    try {
+      if (kind === 'logo') {
+        if (!isAdmin()) { toast('Only the owner or office can change the logo', { bad: true }); return; }
+        const url = await readImage(file, { max: 320, keepPng: true });
+        await setLogo(url); render(true); toast('Logo saved');
+      } else if (kind === 'myphoto') {
+        const url = await readImage(file, { max: 192, square: true });
+        await setMyPhoto(url); profileModal(); toast('Photo saved');
+      } else if (kind === 'memberphoto') {
+        const url = await readImage(file, { max: 192, square: true });
+        await patch('team', el.dataset.id, { photo: url });
+        const box = $('#tm-photo'); if (box) { const m = member(el.dataset.id); const a = box.querySelector('.avatar'); if (a && m) a.outerHTML = avatar(m, 'lg'); }
+        toast('Photo saved');
+      }
+    } catch (err) { toast(err.message || 'Couldn’t use that picture', { bad: true }); }
+    return;
+  }
   if (el.dataset.q) { if (el.type === 'checkbox' || el.tagName === 'SELECT' || el.dataset.q === 'p-L' || el.dataset.q === 'p-D') quoteInput(el, true); return; }
   const k = el.dataset.change;
   if (!k) return;
@@ -291,6 +318,6 @@ document.addEventListener('drop', async (e) => {
 });
 
 /* ---------- boot ---------- */
-Object.assign(ACTIONS, AUTH_ACTIONS);
+Object.assign(ACTIONS, AUTH_ACTIONS, HELP_ACTIONS);
 window.addEventListener('beforeunload', (e) => { if (S.qdraft && S.qdraft.dirty) { e.preventDefault(); e.returnValue = ''; } });
 kerfBoot();

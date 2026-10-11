@@ -20,5 +20,5 @@ module.exports = async (req, res) => {
       }
     } catch (err) { schema = null; }
   }
-  send(res, 200, { configured: true, url: e.url, anonKey: e.anon, hasSecret: !!e.secret, missing, schema, keyProblem });
+  send(res, 200, { configured: true, url: e.url, anonKey: e.anon, hasSecret: !!e.secret, missing, schema, keyProblem, ai: !!String(process.env.ANTHROPIC_API_KEY || '').trim() });
 };

@@ -475,4 +475,17 @@ async function removeSample() {
   } catch (e) { reportErr(e); }
 }
 const hasSample = () => COLLS.some((c) => Array.from(S[c].values()).some((x) => x.demo));
+async function setMyPhoto(photo) {
+  if (!S.me) { toast('Your login isn’t linked to a team member yet', { bad: true }); return; }
+  if (S.mode !== 'db') { await patch('team', S.me, { photo }); return; }
+  applyLocal('team', S.me, 'patch', { photo });
+  try { await sbRun(() => SB.rpc('kerf_set_my_photo', { sid: S.shopId, photo })); } catch (e) { reportErr(e); }
+}
+async function setLogo(logo) {
+  const cur = cfg();
+  const body = { ...cleanDoc(S.settingsDoc || {}), logo };
+  if (!S.settingsDoc) for (const k of Object.keys(DEFAULT_SETTINGS)) if (body[k] === undefined && k !== 'materials' && k !== 'edges' && k !== 'addons') body[k] = cur[k];
+  await saveSettings(body);
+  if (S.sdraft) S.sdraft.logo = logo;
+}
 function setMe(id) { S.me = id; store.set('kerf-me', id); schedule(); }

@@ -144,7 +144,7 @@ const MEMBER_COLORS = ['#B33B0B', '#2D5C9C', '#0F7C80', '#7650AD', '#2D7A4C', '#
 const AREA_PRESETS = ['Kitchen', 'Island', 'Vanity', 'Bar top', 'Laundry', 'Fireplace', 'Outdoor kitchen', 'Shower curb & niche'];
 
 const DEFAULT_SETTINGS = {
-  shopName: '', shopPhone: '', shopEmail: '', shopAddress: '',
+  shopName: '', shopPhone: '', shopEmail: '', shopAddress: '', logo: '',
   taxRate: 0, depositPct: 50, minCharge: 1200, tearOutPerSqft: 8, quoteValidDays: 30,
   slabL: 126, slabW: 63,
   capInstallSqft: 160, capTemplates: 4,
@@ -212,15 +212,46 @@ const ICONS = {
   undo: '<path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/>',
   dup: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M4 16V5a1 1 0 0 1 1-1h11"/>',
   refresh: '<path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/>',
+  help: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.3a2.6 2.6 0 0 1 5 .9c0 1.7-2.5 2.2-2.5 3.8M12 17.2v.01"/>',
 };
 const icon = (n, extra = '') => `<svg viewBox="0 0 24 24" aria-hidden="true" ${extra}>${ICONS[n] || ''}</svg>`;
 const BRAND = '<svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#151A18"/><g transform="translate(16 15)"><circle r="9" fill="#CCD3CF" stroke="#CCD3CF" stroke-width="1.6" stroke-dasharray="1.3 1.3"/><circle r="5.6" fill="#AAB3AE"/><circle r="1.5" fill="#151A18"/></g><rect x="2.5" y="19.5" width="27" height="9" rx="1" fill="#D9480F"/><rect x="2.5" y="25.5" width="27" height="3" fill="#B03A0C"/></svg>';
 
 /* ---------- people helpers ---------- */
 const initials = (name) => String(name || '?').trim().split(/\s+/).slice(0, 2).map((w) => w[0] || '').join('').toUpperCase() || '?';
+const safeImg = (u) => (typeof u === 'string' && /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(u) ? u : '');
 function avatar(m, cls = '') {
   if (!m) return '';
-  return `<span class="avatar ${cls}" style="--c:${esc(m.color || '#68716D')}" title="${esc(m.name)}">${esc(initials(m.name))}</span>`;
+  const p = safeImg(m.photo);
+  return `<span class="avatar ${cls} ${p ? 'has-photo' : ''}" style="--c:${esc(m.color || '#68716D')}" title="${esc(m.name)}">${p ? `<img src="${p}" alt="">` : esc(initials(m.name))}</span>`;
+}
+/* shrink a picked image in the browser so it stores small: square crop for faces, fit for logos */
+function readImage(file, { max = 256, square = false, keepPng = false } = {}) {
+  return new Promise((resolve, reject) => {
+    if (!file || !/^image\//.test(file.type)) { reject(new Error('Pick a photo or image file.')); return; }
+    const fr = new FileReader();
+    fr.onerror = () => reject(new Error('Couldn’t read that file.'));
+    fr.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('That image couldn’t be opened. Try a JPG or PNG.'));
+      img.onload = () => {
+        let sx = 0, sy = 0, sw = img.width, sh = img.height;
+        if (square) { const s = Math.min(sw, sh); sx = (sw - s) / 2; sy = (sh - s) / 2; sw = sh = s; }
+        const scale = Math.min(1, max / Math.max(sw, sh));
+        const w = Math.max(1, Math.round(sw * scale)), h = Math.max(1, Math.round(sh * scale));
+        const c = document.createElement('canvas'); c.width = w; c.height = h;
+        const ctx = c.getContext('2d');
+        if (!keepPng) { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h); }
+        ctx.drawImage(img, sx, sy, sw, sh, 0, 0, w, h);
+        const png = keepPng && file.type === 'image/png';
+        let out = c.toDataURL(png ? 'image/png' : 'image/jpeg', 0.85);
+        if (out.length > 110000) out = c.toDataURL('image/jpeg', 0.7);
+        resolve(out);
+      };
+      img.src = fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
 }
 const lastName = (n) => { const p = String(n || '').trim().split(/\s+/); return p[p.length - 1] || ''; };
 

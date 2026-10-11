@@ -217,6 +217,19 @@ function customerModal(id) {
 }
 
 /* ---------- Team member ---------- */
+function profileModal() {
+  const m = member(S.me);
+  if (!m) { toast(S.mode === 'db' ? 'Your login isn’t linked to a team member yet. Ask the owner.' : 'Pick your name under Working as first', { bad: true }); return; }
+  MS = { kind: 'profile' };
+  const p = safeImg(m.photo);
+  openModal({
+    title: 'Your profile',
+    body: `<div style="display:flex;align-items:center;gap:16px">${avatar(m, 'xl')}<div style="min-width:0"><b style="font-size:16px">${esc(m.name)}</b><div class="muted">${esc(m.role || '')}${S.mode === 'db' ? ' · ' + esc(ACCESS_LABEL[access()] || '') : ''}</div>${S.auth.user ? `<div class="faint mono" style="font-size:12px;overflow-wrap:anywhere">${esc(S.auth.user.email || '')}</div>` : ''}</div></div>
+      <div class="btn-row"><label class="btn primary">${icon('plus')}${p ? 'Change photo' : 'Add a photo'}<input type="file" accept="image/*" capture="user" class="sr" data-upload="myphoto"></label>${p ? '<button class="btn ghost" data-act="photo-remove">Remove photo</button>' : ''}</div>
+      <p class="faint" style="margin:0;font-size:12.5px">Your photo shows next to your name on the calendar, jobs and notes.</p>`,
+    foot: `${S.mode === 'db' ? '<button class="btn left" data-act="sign-out">Sign out</button>' : ''}<button class="btn" data-act="close-modal">Done</button>`,
+  });
+}
 function memberModal(id) {
   if (!guardWrite()) return;
   const m = id ? member(id) : null;
@@ -230,6 +243,7 @@ function memberModal(id) {
       <label class="field"><span>Phone</span><input class="input" id="tm-phone" inputmode="tel" value="${esc(m ? m.phone || '' : '')}"></label>
       <label class="field span2"><span>Email <span class="faint">(used for their login)</span></span><input class="input" id="tm-email" inputmode="email" value="${esc(m ? m.email || '' : '')}"></label></div>
       <div class="field"><span>Color on the calendar</span><div class="btn-row" id="tm-colors">${tmColorsHTML()}</div></div>
+      ${m ? `<div class="field"><span>Photo</span><div class="logo-row" id="tm-photo">${avatar(m, 'lg')}<label class="btn sm">Upload<input type="file" accept="image/*" class="sr" data-upload="memberphoto" data-id="${esc(m.id)}"></label>${safeImg(m.photo) ? `<button class="btn sm ghost" data-act="member-photo-remove" data-id="${esc(m.id)}">Remove</button>` : ''}</div></div>` : ''}
       ${m ? `<label class="check"><input type="checkbox" id="tm-active" ${m.active !== false ? 'checked' : ''}> Active (shows in crew lists)</label>` : ''}`,
     foot: `<button class="btn" data-act="close-modal">Cancel</button><button class="btn primary" data-act="tm-save">Save</button>`,
   });

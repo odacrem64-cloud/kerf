@@ -3,6 +3,28 @@
    ========================================================= */
 const demoTag = (x) => (x && x.demo ? '<span class="tag demo">SAMPLE</span>' : '');
 
+const gsKey = () => 'kerf-gs-hidden-' + (S.shopId || 'demo');
+function gettingStartedHTML(full) {
+  if (!isAdmin()) return '';
+  if (!full && store.get(gsKey(), false)) return '';
+  const c = cfg();
+  const hasLogo = !!safeImg(c.logo);
+  const pricesSet = !!(S.settingsDoc && Array.isArray(S.settingsDoc.materials));
+  const crewIn = S.mode === 'db' ? Array.from(S.members.values()).filter((m) => m.status === 'active').length > 1 : S.team.size > 1;
+  const triedSample = hasSample() || allJobs().length > 0;
+  const steps = [hasLogo, pricesSet, crewIn, triedSample];
+  if (!full && steps.every(Boolean)) return '';
+  const done = steps.filter(Boolean).length;
+  const step = (ok, n, title, text, actions, extra = '') => `<li class="gs-step ${ok ? 'ok' : ''} ${extra}"><span class="gs-n">${ok ? icon('check') : n}</span><div class="gs-body"><b>${title}</b><span class="muted">${text}</span>${actions ? `<div class="btn-row" style="margin-top:8px">${actions}</div>` : ''}</div></li>`;
+  const code = S.mode === 'db' && S.shop ? S.shop.join_code : '';
+  return `<section class="card gs ${full ? 'gs-full' : ''}"><div class="card-h"><h2>Get your shop set up</h2><span class="faint">${done} of 4 done</span>${full ? '' : `<button class="btn sm ghost" data-act="gs-hide" aria-label="Hide this guide">${icon('close')}</button>`}</div>
+    <ol class="gs-list">
+      ${step(triedSample, 1, 'Explore with the sample shop', 'Loads a dozen realistic jobs, a crew and a full week on the calendar so you can click around before entering real work. Remove it any time in Settings.', S.canWrite && !hasSample() ? `<button class="btn primary glow" data-act="load-sample">${icon('board')}Load sample shop</button><span class="tag demo">Recommended</span>` : (hasSample() ? '<span class="tag ok">Sample shop loaded</span>' : ''), triedSample ? '' : 'gs-hot')}
+      ${step(hasLogo, 2, 'Add your logo', 'It shows in the menu and on every customer quote.', hasLogo ? `<img class="gs-logo" src="${safeImg(c.logo)}" alt="Your logo">` : `<label class="btn">${icon('download', 'style="transform:rotate(180deg)"')}Upload logo<input type="file" accept="image/*" class="sr" data-upload="logo"></label>`)}
+      ${step(pricesSet, 3, 'Check your prices', 'Materials per square foot, edges, cutouts and sinks. Starter prices are filled in.', `<button class="btn" data-act="go" data-view="settings">${icon('tag')}Open prices</button>`)}
+      ${step(crewIn, 4, 'Invite your crew', code ? `Text them your shop code. They tap <b>Join a shop</b> on the website and you approve them. The code always lives at the top of the <b>Team</b> page.` : 'Add your team on the Team page.', code ? `<span class="shopcode sm mono" style="user-select:all">${esc(code)}</span><button class="btn" data-act="copy-code">${icon('copy')}Copy invite</button><button class="btn ghost" data-act="go" data-view="team">Go to Team</button>` : `<button class="btn" data-act="go" data-view="team">Go to Team</button>`)}
+    </ol></section>`;
+}
 function welcomeHTML() {
   return `<div class="welcome">
     <div class="card"><div class="card-h"><h2>Set up your shop</h2></div><div class="card-b">
@@ -43,7 +65,7 @@ function actRowHTML(a, opts = {}) {
 
 VIEWS.dashboard = () => {
   const jobs = allJobs();
-  if (!jobs.length) return { title: 'Welcome to Kerf', body: welcomeHTML() };
+  if (!jobs.length) return { title: `Welcome${shopName() ? ' to ' + esc(shopName()) : ' to Kerf'}`, body: isAdmin() ? gettingStartedHTML(true) : welcomeHTML() };
   const t = today(), ws = weekStart(t), we = addDays(ws, 6);
   const mStart = parseD(t.slice(0, 8) + '01').getTime();
   const live = jobs.filter((j) => j.stage !== 'lost');
@@ -106,7 +128,7 @@ VIEWS.dashboard = () => {
   return {
     title: `${greet}${me ? ', ' + esc(me.name.split(' ')[0]) : ''}`,
     crumb: esc((shop ? shop + ' · ' : '') + fmtD(t)),
-    body: `${kpis}${pipe}<div class="cols"><div class="stack">${attn}${sched}</div><div class="stack">${feedHTML}</div></div>`,
+    body: `${gettingStartedHTML(false)}${kpis}${pipe}<div class="cols"><div class="stack">${attn}${sched}</div><div class="stack">${feedHTML}</div></div>`,
   };
 };
 

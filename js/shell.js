@@ -30,14 +30,16 @@ function renderRail() {
   const sync = S.mode === 'db' ? (S.live ? `<div class="sync live"><i></i>Live · synced with your team</div>` : `<div class="sync local"><i></i>Reconnecting…</div>`) : S.mode === 'local' ? `<div class="sync local"><i></i>Demo · this device only</div>` : `<div class="sync"><i></i>Connecting…</div>`;
   const meM = member(S.me);
   const who = S.mode === 'db'
-    ? `<div style="display:flex;align-items:center;gap:9px;min-width:0">${meM ? avatar(meM) : ''}<div style="min-width:0;flex:1"><div style="color:var(--rail-ink);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(meM ? meM.name : (S.auth.user && S.auth.user.email) || '')}</div><div>${esc(ACCESS_LABEL[access()] || '')}</div></div><button class="btn sm ghost" style="color:var(--rail-ink-2)" data-act="sign-out">Sign out</button></div>${S.myShops.length > 1 ? '<button class="btn sm ghost" style="color:var(--rail-ink-2);justify-content:flex-start;padding-left:0" data-act="switch-shop">Switch shop</button>' : ''}`
+    ? `<div style="display:flex;align-items:center;gap:9px;min-width:0"><button class="me-btn" data-act="my-profile" title="Your profile and photo">${meM ? avatar(meM) : ''}</button><div style="min-width:0;flex:1"><div style="color:var(--rail-ink);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(meM ? meM.name : (S.auth.user && S.auth.user.email) || '')}</div><div>${esc(ACCESS_LABEL[access()] || '')}</div></div><button class="btn sm ghost" style="color:var(--rail-ink-2)" data-act="sign-out">Sign out</button></div>${S.myShops.length > 1 ? '<button class="btn sm ghost" style="color:var(--rail-ink-2);justify-content:flex-start;padding-left:0" data-act="switch-shop">Switch shop</button>' : ''}`
     : null;
   rail.innerHTML = `
-    <div class="brand">${BRAND}<div><div class="brand-name">KERF</div><div class="brand-sub">${esc(shopName() || 'Countertop shop')}</div></div></div>
+    ${(() => { const logo = safeImg(cfg().logo); const nm = shopName(); return logo
+      ? `<div class="brand has-logo"><img class="brand-logo" src="${logo}" alt=""><div style="min-width:0"><div class="brand-shop">${esc(nm || 'Your shop')}</div><div class="brand-sub">Kerf</div></div></div>`
+      : `<div class="brand">${BRAND}<div style="min-width:0"><div class="brand-name">KERF</div><div class="brand-sub">${esc(nm || 'Countertop shop')}</div></div></div>`; })()}
     ${navFor().map((n) => (n ? `<button class="nav-item" data-act="go" data-view="${n.id}" ${act === n.id ? 'aria-current="page"' : ''}>${icon(n.icon)}<span>${n.name}</span>${counts[n.id] ? `<span class="count">${counts[n.id]}</span>` : ''}</button>` : '<div class="nav-sep"></div>')).join('')}
     <div class="rail-foot">
       ${who || `<label class="field"><span style="color:var(--rail-ink-2);font-weight:600">Working as</span>
-        <select id="me-select" data-change="me">${team.length ? `<option value="" ${!S.me ? 'selected' : ''}>Choose your name</option>` + team.map((m) => `<option value="${esc(m.id)}" ${S.me === m.id ? 'selected' : ''}>${esc(m.name)}</option>`).join('') : '<option value="">Add your team first</option>'}</select></label>`}
+        <select id="me-select" data-change="me">${team.length ? `<option value="" ${!S.me ? 'selected' : ''}>Choose your name</option>` + team.map((m) => `<option value="${esc(m.id)}" ${S.me === m.id ? 'selected' : ''}>${esc(m.name)}</option>`).join('') : '<option value="">Add your team first</option>'}</select></label>${S.me ? '<button class="btn sm ghost" style="color:var(--rail-ink-2);justify-content:flex-start;padding-left:0" data-act="my-profile">My photo</button>' : ''}`}
       ${sync}
     </div>`;
 }
@@ -77,11 +79,13 @@ function render(force = false) {
   if (!main) return;
   if (S.auth.screen) {
     document.body.classList.add('authmode');
+    if (typeof renderHelp === 'function') renderHelp();
     const key = 'auth:' + S.auth.screen;
     if (force || mountedKey !== key) { main.innerHTML = authHTML(); mountedKey = key; const f = $('[autofocus]', main); if (f) setTimeout(() => f.focus(), 30); }
     return;
   }
   document.body.classList.remove('authmode');
+  if (typeof renderHelp === 'function' && !$('#help').innerHTML) renderHelp();
   renderRail();
   renderTabbar();
   if (!isLoaded()) { main.innerHTML = skeletonHTML(); mountedKey = ''; return; }
